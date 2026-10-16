@@ -23,3 +23,19 @@ export {
   type WalletSelectionGridProps,
   type WalletTabProps,
 } from './WalletSelection';
+export {
+  WalletVerifyScreen,
+  type WalletVerifyScreenProps,
+  type WalletVerifyScreenLabels,
+} from './WalletVerifyScreen';
+export {
+  WalletConnectScreen,
+  type WalletConnectScreenProps,
+  type WalletConnectScreenLabels,
+} from './WalletConnectScreen';
+export {
+  WalletDropdownMenu,
+  type WalletDropdownMenuProps,
+  type WalletMenuItem,
+  type WalletAuthStatus,
+} from './WalletDropdownMenu';

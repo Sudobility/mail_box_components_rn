@@ -19,6 +19,9 @@ export { ProviderButtons } from './ProviderButtons';
 export { EmailSignInForm } from './EmailSignInForm';
 export { EmailSignUpForm } from './EmailSignUpForm';
 export { ForgotPasswordForm } from './ForgotPasswordForm';
+export { AuthModal, type AuthModalProps } from './AuthModal';
+export { AuthContent } from './AuthContent';
+export { UserMenu, type UserMenuProps } from './UserMenu';
 
 // Types
 export type {
