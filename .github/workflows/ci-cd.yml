@@ -96,6 +96,10 @@ jobs:
         run: |
           printf 'registry=https://registry.npmjs.org/\n@sudobility:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
           cp .npmrc "$HOME/.npmrc"
+          # bun install runs inside packages/<pkg>/ and does not read this
+          # repo-root .npmrc (only the package dir + $HOME), so write it there too
+          # or @sudobility/* falls through to npmjs and 404s.
+          cp .npmrc "packages/${{ matrix.package }}/.npmrc"
       - name: Check version on GitHub Packages
         id: cv
         working-directory: ./packages/${{ matrix.package }}
