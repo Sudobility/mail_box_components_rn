@@ -1,7 +1,4 @@
 ---
-# CI/CD workflow for mail_box_components_rn (React Native)
-# Automatically publishes to NPM when NPM_TOKEN is configured
-
 name: CI/CD
 
 on:
@@ -15,80 +12,117 @@ on:
       - develop
 
 permissions:
-  contents: write # For creating GitHub releases
-  id-token: write # For NPM provenance
-  deployments: write # For deployment tracking
+  contents: write
+  id-token: write
+  deployments: write
+  packages: write
 
 jobs:
   cicd:
     uses: johnqh/workflows/.github/workflows/unified-cicd.yml@main
-    secrets: inherit # Pass all repository secrets
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GH_PACKAGES_READ_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN }}
+    with:
+      publish-target: github
 
-  # Publish specialized packages after main package (runs even if main fails)
   publish-specialized:
     needs: cicd
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
+      max-parallel: 10
       matrix:
         package:
-          - analytics
-          - auth
-          - devops
-          - email
-          - entity
-          - marketing
-          - ratelimit
-          - social
-          - subscription
-          - web3
-
+          - agriculture-components-rn
+          - analytics-components-rn
+          - auth-components-rn
+          - automotive-components-rn
+          - collaboration-components-rn
+          - communication-components-rn
+          - construction-components-rn
+          - design-components-rn
+          - devops-components-rn
+          - documents-components-rn
+          - ecommerce-components-rn
+          - education-components-rn
+          - email-components-rn
+          - energy-components-rn
+          - entertainment-components-rn
+          - entity-components-rn
+          - events-components-rn
+          - finance-components-rn
+          - fitness-components-rn
+          - food-components-rn
+          - gaming-components-rn
+          - government-components-rn
+          - healthcare-components-rn
+          - hr-components-rn
+          - insurance-components-rn
+          - interaction-components-rn
+          - iot-components-rn
+          - legal-components-rn
+          - logistics-components-rn
+          - manufacturing-components-rn
+          - marketing-components-rn
+          - media-components-rn
+          - monitoring-components-rn
+          - nonprofit-components-rn
+          - project-management-components-rn
+          - ratelimit-components-rn
+          - realestate-components-rn
+          - retail-components-rn
+          - scheduling-components-rn
+          - scientific-components-rn
+          - search-components-rn
+          - security-components-rn
+          - social-components-rn
+          - subscription-components-rn
+          - travel-components-rn
+          - visualization-components-rn
+          - web3-components-rn
+          - workflow-components-rn
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-
+      - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Check if package needs publishing
-        id: check-version
+      - name: Configure GitHub Packages registry
         run: |
-          # Get published version from npm registry (empty if not published)
-          PUBLISHED_VERSION=$(npm view @sudobility/${{ matrix.package }}-components-rn version 2>/dev/null || echo "")
-
-          # Get local version from package.json
-          LOCAL_VERSION=$(node -p "require('./packages/${{ matrix.package }}-components-rn/package.json').version")
-
-          # Compare versions
-          if [ "$PUBLISHED_VERSION" != "$LOCAL_VERSION" ]; then
-            echo "changed=1" >> $GITHUB_OUTPUT
-            echo "📦 Will publish ${{ matrix.package }}-components-rn@$LOCAL_VERSION (npm: ${PUBLISHED_VERSION:-not published})"
-          else
-            echo "changed=0" >> $GITHUB_OUTPUT
-            echo "✓ ${{ matrix.package }}-components-rn@$LOCAL_VERSION already published"
-          fi
-
-      - name: Install dependencies
-        if: steps.check-version.outputs.changed == '1'
-        working-directory: ./packages/${{ matrix.package }}-components-rn
+          printf 'registry=https://registry.npmjs.org/\n@sudobility:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
+          cp .npmrc "$HOME/.npmrc"
+      - name: Check version on GitHub Packages
+        id: cv
+        working-directory: ./packages/${{ matrix.package }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          LOCAL=$(node -p "require('./package.json').version")
+          PUB=$(npm view "$NAME@$LOCAL" version 2>/dev/null || echo "")
+          if [ "$PUB" = "$LOCAL" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; else echo "skip=0" >> "$GITHUB_OUTPUT"; fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Install
+        if: steps.cv.outputs.skip == '0'
+        working-directory: ./packages/${{ matrix.package }}
         run: bun install
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Build package
-        if: steps.check-version.outputs.changed == '1'
-        working-directory: ./packages/${{ matrix.package }}-components-rn
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Build
+        if: steps.cv.outputs.skip == '0'
+        working-directory: ./packages/${{ matrix.package }}
         run: bun run build
-
-      - name: Publish to NPM
-        if: steps.check-version.outputs.changed == '1'
-        working-directory: ./packages/${{ matrix.package }}-components-rn
-        run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Publish to GitHub Packages
+        if: steps.cv.outputs.skip == '0'
+        working-directory: ./packages/${{ matrix.package }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
