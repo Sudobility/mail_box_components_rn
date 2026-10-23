@@ -16,7 +16,7 @@
         "@react-native/babel-preset": "~0.84.1",
         "@react-native/js-polyfills": "~0.84.1",
         "@react-native/normalize-colors": "~0.84.1",
-        "@sudobility/design": "^1.1.65",
+        "@sudobility/design": "^1.1.66",
         "@sudobility/types": "^1.9.76",
         "@testing-library/jest-native": "~5.4.3",
         "@testing-library/react-native": "~13.3.3",
@@ -49,7 +49,7 @@
       },
       "peerDependencies": {
         "@react-native-community/slider": "^4.5.1",
-        "@sudobility/design": "^1.1.65",
+        "@sudobility/design": "^1.1.66",
         "@sudobility/types": "^1.9.76",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.0.0",
@@ -651,7 +651,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@sudobility/design": ["@sudobility/design@1.1.65", "https://npm.pkg.github.com/download/@sudobility/design/1.1.65/3002b35fd3e7332f40c471a4694613b71acac90e", { "peerDependencies": { "clsx": ">=2.0.0", "tailwind-merge": ">=2.0.0" } }, "sha512-d4EyfqJMZEMiAH5KJUEcs2OBr7yve1stUP4rWL577egRwBZD2VE6BmussP/N5PR/Awogh2i+xHW4g3md7275QA=="],
+    "@sudobility/design": ["@sudobility/design@1.1.66", "https://npm.pkg.github.com/download/@sudobility/design/1.1.66/08ff28eba0e05a9e6916a0aae67ac2c36df590f2", { "peerDependencies": { "clsx": ">=2.0.0", "tailwind-merge": ">=2.0.0" } }, "sha512-E+5HxPKHsujJQMYhtdgtzcGkGtaHhuWpMBd05n+dq/FMihrLT8GeMj6G75XpaxqQmbWYOfkjHEUV2GFcECzeNw=="],
 
     "@sudobility/types": ["@sudobility/types@1.9.76", "https://npm.pkg.github.com/download/@sudobility/types/1.9.76/71635156f72fd9461107d5f147b3dc1c49f863d0", {}, "sha512-b7maZHR5wM84VlQ+l9R+2guzSOrExog6OUNy1oCe7h0abW13syycmnLQL0g+qql0aQ84qTB4A0mJelhY3Vef4Q=="],
 
