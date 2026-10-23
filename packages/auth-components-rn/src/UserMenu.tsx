@@ -106,7 +106,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             )}
           >
             {/* Stop presses inside the menu from dismissing it */}
-            <Pressable onPress={() => {}}>
+            <Pressable {...pressProps(() => {})}>
               {/* User info section */}
               {showUserInfo && (
                 <View className='px-4 py-3 border-b border-border'>

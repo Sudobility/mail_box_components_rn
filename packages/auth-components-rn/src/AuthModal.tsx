@@ -109,7 +109,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         {/* Stop backdrop press from firing when pressing the content */}
         <Pressable
-          onPress={() => {}}
+          {...pressProps(() => {})}
           className={cn(
             'relative w-full max-w-md rounded-xl bg-background shadow-2xl',
             className
