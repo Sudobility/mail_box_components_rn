@@ -96,10 +96,6 @@ jobs:
         run: |
           printf 'registry=https://registry.npmjs.org/\n@sudobility:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}\n' > .npmrc
           cp .npmrc "$HOME/.npmrc"
-          # bun install runs inside packages/<pkg>/ and does not read this
-          # repo-root .npmrc (only the package dir + $HOME), so write it there too
-          # or @sudobility/* falls through to npmjs and 404s.
-          cp .npmrc "packages/${{ matrix.package }}/.npmrc"
       - name: Check version on GitHub Packages
         id: cv
         working-directory: ./packages/${{ matrix.package }}
@@ -110,9 +106,13 @@ jobs:
           if [ "$PUB" = "$LOCAL" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; else echo "skip=0" >> "$GITHUB_OUTPUT"; fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
-      - name: Install
+      # Install at the workspace ROOT: the per-sub-package lockfiles have empty
+      # resolution URLs for @sudobility/* (so bun defaults them to npmjs and
+      # 404s on GitHub-Packages-only versions), while the root workspace
+      # lockfile pins them to npm.pkg.github.com. A root install hoists the
+      # sub-package's deps so its build/publish below resolve correctly.
+      - name: Install (workspace root)
         if: steps.cv.outputs.skip == '0'
-        working-directory: ./packages/${{ matrix.package }}
         run: bun install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
