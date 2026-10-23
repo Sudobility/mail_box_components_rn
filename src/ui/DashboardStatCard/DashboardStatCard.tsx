@@ -44,15 +44,13 @@ export interface DashboardStatCardProps {
  */
 
 // Rebuilt when the theme changes; see lib/theme-cache.
-const getDashboardCardColors = themeCached(
-  (): Record<string, string> => ({
-    default: getCardVariantColors('default'),
-    primary: getCardVariantColors('info'),
-    success: getCardVariantColors('success'),
-    warning: getCardVariantColors('warning'),
-    danger: getCardVariantColors('error'),
-  })
-);
+const getDashboardCardColors = themeCached((): Record<string, string> => ({
+  default: getCardVariantColors('default'),
+  primary: getCardVariantColors('info'),
+  success: getCardVariantColors('success'),
+  warning: getCardVariantColors('warning'),
+  danger: getCardVariantColors('error'),
+}));
 
 export const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
   title,

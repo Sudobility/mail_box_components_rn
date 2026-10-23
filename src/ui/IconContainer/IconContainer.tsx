@@ -11,12 +11,7 @@ export interface IconContainerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   /** Color variant */
   variant?:
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'warning'
-    | 'error'
-    | 'neutral';
+    'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'neutral';
   /** Shape variant */
   shape?: 'square' | 'rounded' | 'circle';
   /** Additional className */

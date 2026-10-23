@@ -4,24 +4,10 @@ import { cn } from '../../lib/utils';
 import { Container } from '../Container';
 
 export type SectionVariant =
-  | 'default'
-  | 'hero'
-  | 'feature'
-  | 'cta'
-  | 'testimonial'
-  | 'footer';
+  'default' | 'hero' | 'feature' | 'cta' | 'testimonial' | 'footer';
 
 export type SectionSpacing =
-  | 'none'
-  | 'xs'
-  | 'sm'
-  | 'md'
-  | 'lg'
-  | 'xl'
-  | '2xl'
-  | '3xl'
-  | '4xl'
-  | '5xl';
+  'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
 
 export type SectionBackground = 'none' | 'default' | 'surface';
 
