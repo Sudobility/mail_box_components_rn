@@ -73,3 +73,10 @@ jest.mock('nativewind', () => ({
   // (see __tests__/theme-color.test.tsx).
   useUnstableNativeVariable: () => undefined,
 }));
+
+// SVG's Fabric components need native codegen, which Jest's React Native
+// environment does not provide. The tests exercise our components' behavior.
+jest.mock('react-native-svg', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: View, Svg: View, Path: View };
+});
