@@ -106,24 +106,19 @@ jobs:
           if [ "$PUB" = "$LOCAL" ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; else echo "skip=0" >> "$GITHUB_OUTPUT"; fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
-      # Install at the workspace ROOT: the per-sub-package lockfiles have empty
-      # resolution URLs for @sudobility/* (so bun defaults them to npmjs and
-      # 404s on GitHub-Packages-only versions), while the root workspace
-      # lockfile pins them to npm.pkg.github.com. A root install hoists the
-      # sub-package's deps so its build/publish below resolve correctly.
-      - name: Install (workspace root)
+      # Install inside the sub-package (this repo is NOT a bun workspace, so the
+      # sub-package resolves @sudobility/components-rn from its own node_modules,
+      # pulled from GitHub Packages via devDependencies). The committed
+      # per-sub-package bun.lock pins @sudobility/* to an empty resolution URL,
+      # so bun defaults them to npmjs and 404s on GitHub-Packages-only versions.
+      # Removing the lockfile forces a fresh resolution through .npmrc, which
+      # routes @sudobility -> npm.pkg.github.com.
+      - name: Install (sub-package, fresh resolution)
         if: steps.cv.outputs.skip == '0'
-        run: bun install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
-          BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
-      # Build the root @sudobility/components-rn first: its `types` field points
-      # at dist/index.d.ts, and the sub-packages import it, so without this the
-      # sub-package build fails with TS2307 "Cannot find module
-      # '@sudobility/components-rn'" on a fresh checkout.
-      - name: Build root package (provides @sudobility/components-rn types)
-        if: steps.cv.outputs.skip == '0'
-        run: bun run build
+        working-directory: ./packages/${{ matrix.package }}
+        run: |
+          rm -f bun.lock
+          bun install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
           BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
