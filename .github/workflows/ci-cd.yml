@@ -117,6 +117,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
           BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+      # Build the root @sudobility/components-rn first: its `types` field points
+      # at dist/index.d.ts, and the sub-packages import it, so without this the
+      # sub-package build fails with TS2307 "Cannot find module
+      # '@sudobility/components-rn'" on a fresh checkout.
+      - name: Build root package (provides @sudobility/components-rn types)
+        if: steps.cv.outputs.skip == '0'
+        run: bun run build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+          BUN_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Build
         if: steps.cv.outputs.skip == '0'
         working-directory: ./packages/${{ matrix.package }}
