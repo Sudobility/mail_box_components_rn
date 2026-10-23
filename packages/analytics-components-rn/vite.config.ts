@@ -16,7 +16,7 @@ export default defineConfig({
       fileName: format => `index.${format === 'es' ? 'esm' : format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-native', 'nativewind', 'clsx'],
+      external: (id) => !/^[.\/]/.test(id),
       output: {
         exports: 'named',
         globals: {

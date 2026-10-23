@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -60,7 +55,7 @@ export const Carousel: React.FC<CarouselProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [width, setWidth] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const slides = React.Children.toArray(children);
   const totalSlides = slides.length;
 
@@ -83,8 +78,7 @@ export const Carousel: React.FC<CarouselProps> = ({
 
   const goToNext = useCallback(() => {
     setCurrentIndex(prev => {
-      const next =
-        prev === totalSlides - 1 ? (loop ? 0 : prev) : prev + 1;
+      const next = prev === totalSlides - 1 ? (loop ? 0 : prev) : prev + 1;
       scrollToIndex(next);
       return next;
     });
@@ -125,9 +119,7 @@ export const Carousel: React.FC<CarouselProps> = ({
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
     if (width > 0) {
-      const index = Math.round(
-        event.nativeEvent.contentOffset.x / width
-      );
+      const index = Math.round(event.nativeEvent.contentOffset.x / width);
       setCurrentIndex(index);
     }
   };
@@ -162,10 +154,7 @@ export const Carousel: React.FC<CarouselProps> = ({
       {showArrows && totalSlides > 1 && (
         <>
           <Pressable
-            {...pressProps(
-              handlePrevious,
-              !loop && currentIndex === 0
-            )}
+            {...pressProps(handlePrevious, !loop && currentIndex === 0)}
             disabled={!loop && currentIndex === 0}
             accessibilityRole='button'
             accessibilityLabel='Previous slide'

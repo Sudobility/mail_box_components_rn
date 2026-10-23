@@ -13,7 +13,10 @@ export { Flashcard, type FlashcardProps } from './Flashcard';
 export { FleetManagement, type FleetManagementProps } from './FleetManagement';
 export { FlipCard, type FlipCardProps } from './FlipCard';
 export { FuelGauge, type FuelGaugeProps } from './FuelGauge';
-export { GlassmorphismCard, type GlassmorphismCardProps } from './GlassmorphismCard';
+export {
+  GlassmorphismCard,
+  type GlassmorphismCardProps,
+} from './GlassmorphismCard';
 export { MaintenanceLog, type MaintenanceLogProps } from './MaintenanceLog';
 export { PreferenceCard, type PreferenceCardProps } from './PreferenceCard';
 export { VehicleStatus, type VehicleStatusProps } from './VehicleStatus';

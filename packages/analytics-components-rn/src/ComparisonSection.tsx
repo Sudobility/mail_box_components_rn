@@ -47,7 +47,10 @@ export interface ComparisonSectionProps {
 }
 
 // NativeWind lacks CSS grid; layouts map to vertical flex stacks (gap by spacing).
-const spacingStyles: Record<NonNullable<ComparisonSectionProps['spacing']>, string> = {
+const spacingStyles: Record<
+  NonNullable<ComparisonSectionProps['spacing']>,
+  string
+> = {
   sm: 'gap-4',
   md: 'gap-8',
   lg: 'gap-12',
@@ -90,7 +93,10 @@ const badgeTextColors = {
 };
 
 /** Render a ReactNode icon, wrapping bare strings (e.g. emoji) in <Text>. */
-const renderIcon = (icon: React.ReactNode, className?: string): React.ReactNode =>
+const renderIcon = (
+  icon: React.ReactNode,
+  className?: string
+): React.ReactNode =>
   typeof icon === 'string' || typeof icon === 'number' ? (
     <Text className={className}>{icon}</Text>
   ) : (
@@ -118,16 +124,23 @@ export const ComparisonSection: React.FC<ComparisonSectionProps> = ({
   const renderComparisonCard = (data: ComparisonData, index: number) => {
     const headerColor = headerTextStyles[data.variant];
     const icon =
-      data.icon ?? (index === 0 ? traditionalIcon : web3Icon) ?? defaultIcons[data.variant];
+      data.icon ??
+      (index === 0 ? traditionalIcon : web3Icon) ??
+      defaultIcons[data.variant];
 
     return (
-      <View key={data.title} className={cn('rounded-xl p-6', cardVariantStyles[data.variant])}>
+      <View
+        key={data.title}
+        className={cn('rounded-xl p-6', cardVariantStyles[data.variant])}
+      >
         {/* Header */}
         <View className='flex-row items-center gap-3 mb-4'>
           {renderIcon(icon, 'text-2xl')}
           <View className='flex-1'>
             <View className='flex-row items-center gap-2'>
-              <Text className={cn('text-lg font-bold', headerColor)}>{data.title}</Text>
+              <Text className={cn('text-lg font-bold', headerColor)}>
+                {data.title}
+              </Text>
               {data.badge && (
                 <View
                   className={cn(
@@ -164,7 +177,9 @@ export const ComparisonSection: React.FC<ComparisonSectionProps> = ({
                   {item.text}
                 </Text>
                 {item.subtext && (
-                  <Text className='text-xs text-muted-foreground mt-1'>{item.subtext}</Text>
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    {item.subtext}
+                  </Text>
                 )}
               </View>
             </View>
@@ -180,10 +195,14 @@ export const ComparisonSection: React.FC<ComparisonSectionProps> = ({
       {(title || subtitle) && (
         <View className='items-center gap-4'>
           {title && (
-            <Text className='text-2xl font-bold text-foreground text-center'>{title}</Text>
+            <Text className='text-2xl font-bold text-foreground text-center'>
+              {title}
+            </Text>
           )}
           {subtitle && (
-            <Text className='text-lg text-muted-foreground text-center'>{subtitle}</Text>
+            <Text className='text-lg text-muted-foreground text-center'>
+              {subtitle}
+            </Text>
           )}
         </View>
       )}

@@ -37,7 +37,7 @@ describe('every touchable can be activated by assistive technology', () => {
   it('finds this package\u2019s touchables at all', () => {
     // A scanner that silently matches nothing passes every assertion below —
     // which is how the first version of it went wrong.
-    expect(SITES.length).toBe(3);
+    expect(SITES.length).toBe(6);
   });
 
   it('never wires onPress without onAccessibilityTap', () => {

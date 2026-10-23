@@ -81,7 +81,12 @@ export const Reaction: React.FC<ReactionProps> = ({
   };
 
   return (
-    <View className={cn('relative flex-row flex-wrap items-center gap-2', className)}>
+    <View
+      className={cn(
+        'relative flex-row flex-wrap items-center gap-2',
+        className
+      )}
+    >
       {/* Existing reactions */}
       {reactions.map(reaction => (
         <Pressable
@@ -130,7 +135,9 @@ export const Reaction: React.FC<ReactionProps> = ({
             )}
           >
             {/* TODO: web used an inline plus SVG; substituting a glyph to avoid a new dep. */}
-            <Text className='text-lg leading-none text-muted-foreground'>+</Text>
+            <Text className='text-lg leading-none text-muted-foreground'>
+              +
+            </Text>
           </Pressable>
 
           {/* Emoji picker */}

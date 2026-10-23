@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, type TextProps } from 'react-native';
+import { Text, type TextProps, type HostInstance } from 'react-native';
 import { cn } from '@sudobility/components-rn';
 import { textVariants } from '@sudobility/design';
 
@@ -19,10 +19,12 @@ export interface LabelProps extends TextProps {
  * CSS peer selectors have no RN equivalent, so only the base label typography
  * is carried over.
  */
-export const Label = React.forwardRef<Text, LabelProps>(
+export const Label: React.ForwardRefExoticComponent<
+  LabelProps & React.RefAttributes<HostInstance>
+> = React.forwardRef<HostInstance, LabelProps>(
   ({ className, children, ...props }, ref) => (
     <Text
-      ref={ref}
+      ref={ref as React.Ref<React.ComponentRef<typeof Text>>}
       className={cn(textVariants.label.default(), className)}
       accessibilityRole='text'
       {...props}

@@ -5,8 +5,7 @@ import {
   Image,
   Pressable,
   TextInput,
-  type NativeSyntheticEvent,
-  type TextInputSelectionChangeEventData,
+  type TextInputProps,
 } from 'react-native';
 import { cn, pressProps } from '@sudobility/components-rn';
 import { colors } from '@sudobility/design';
@@ -73,7 +72,7 @@ export const UserMention: React.FC<UserMentionProps> = ({
     start: 0,
     end: 0,
   });
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
     const text = value;
@@ -112,9 +111,9 @@ export const UserMention: React.FC<UserMentionProps> = ({
     }
   }, [value, users, selection.start]);
 
-  const handleSelectionChange = (
-    e: NativeSyntheticEvent<TextInputSelectionChangeEventData>
-  ) => {
+  const handleSelectionChange: NonNullable<
+    TextInputProps['onSelectionChange']
+  > = e => {
     setSelection(e.nativeEvent.selection);
   };
 
@@ -196,7 +195,10 @@ export const UserMention: React.FC<UserMentionProps> = ({
                 <Text className='font-medium text-foreground' numberOfLines={1}>
                   {user.name}
                 </Text>
-                <Text className='text-sm text-muted-foreground' numberOfLines={1}>
+                <Text
+                  className='text-sm text-muted-foreground'
+                  numberOfLines={1}
+                >
                   @{user.username}
                 </Text>
               </View>

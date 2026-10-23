@@ -6,12 +6,21 @@
 export { CallCenter, type CallCenterProps } from './CallCenter';
 export { CallControls, type CallControlsProps } from './CallControls';
 export { ChatBubble, type ChatBubbleProps } from './ChatBubble';
-export { ConnectionStatus, type ConnectionStatusProps } from './ConnectionStatus';
+export {
+  ConnectionStatus,
+  type ConnectionStatusProps,
+} from './ConnectionStatus';
 export { LiveChat, type LiveChatProps } from './LiveChat';
 export { MessageInput, type MessageInputProps } from './MessageInput';
 export { MessageList, type MessageListProps } from './MessageList';
-export { PresenceIndicator, type PresenceIndicatorProps } from './PresenceIndicator';
-export { TypingIndicatorMsg, type TypingIndicatorMsgProps } from './TypingIndicatorMsg';
+export {
+  PresenceIndicator,
+  type PresenceIndicatorProps,
+} from './PresenceIndicator';
+export {
+  TypingIndicatorMsg,
+  type TypingIndicatorMsgProps,
+} from './TypingIndicatorMsg';
 export { VoipPhone, type VoipPhoneProps } from './VoipPhone';
 export {
   Reaction,

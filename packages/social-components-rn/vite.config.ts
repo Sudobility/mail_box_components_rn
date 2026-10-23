@@ -16,17 +16,7 @@ export default defineConfig({
       fileName: format => `index.${format === 'es' ? 'esm' : format}.js`,
     },
     rollupOptions: {
-      external: [
-        'react',
-        'react-native',
-        'react-native-safe-area-context',
-        'react-native-svg',
-        'react-native-gesture-handler',
-        'react-native-reanimated',
-        'expo-clipboard',
-        'nativewind',
-        'clsx',
-      ],
+      external: (id) => !/^[.\/]/.test(id),
       output: {
         exports: 'named',
         globals: {

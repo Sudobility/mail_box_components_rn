@@ -144,8 +144,7 @@ export const Rating: React.FC<RatingProps> = ({
 
   const renderIcon = (index: number) => {
     const isFilled = index < Math.floor(displayValue);
-    const isHalf =
-      index === Math.floor(displayValue) && displayValue % 1 !== 0;
+    const isHalf = index === Math.floor(displayValue) && displayValue % 1 !== 0;
 
     const starContent = (
       <View className='relative' style={{ width: starSize, height: starSize }}>
