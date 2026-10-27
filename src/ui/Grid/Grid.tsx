@@ -102,12 +102,15 @@ export const Grid: React.FC<GridProps> = ({
   const childrenWithWidth = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       const colSpan = (child.props as GridItemProps).colSpan || 1;
-      return React.cloneElement(child as React.ReactElement, {
-        style: {
-          width: getItemWidth(colSpan),
-          ...(child.props as { style?: object }).style,
-        },
-      });
+      return React.cloneElement(
+        child as React.ReactElement<{ style?: object }>,
+        {
+          style: {
+            width: getItemWidth(colSpan),
+            ...(child.props as { style?: object }).style,
+          },
+        }
+      );
     }
     return child;
   });
