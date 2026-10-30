@@ -32,6 +32,8 @@ export default defineConfig({
         /^react-native-css-interop(\/.*)?$/,
         'react-native',
         '@react-native-community/slider',
+        /^@react-navigation\/.*/,
+        'react-native-screens',
         'react-native-gesture-handler',
         'react-native-reanimated',
         'react-native-safe-area-context',

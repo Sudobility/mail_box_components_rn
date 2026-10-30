@@ -8,7 +8,7 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/packages/'],
   transformIgnorePatterns: [
     // Bun stores deps in node_modules/.bun/<pkg>@<ver>/node_modules/<pkg>/
-    'node_modules/(?!(\\.bun/[^/]+/node_modules/)?(react-native|@react-native|nativewind|react-native-reanimated|clsx|class-variance-authority|tailwind-merge|@testing-library|@sudobility|color|color-string|color-convert|color-name|simple-swizzle|is-arrayish|react-native-bottom-tabs|@bottom-tabs)/)',
+    'node_modules/(?!(\\.bun/[^/]+/node_modules/)?(react-native|@react-native|nativewind|react-native-reanimated|clsx|class-variance-authority|tailwind-merge|@testing-library|@sudobility|color|color-string|color-convert|color-name|simple-swizzle|is-arrayish|react-native-bottom-tabs|@bottom-tabs|@react-navigation|react-native-screens)/)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

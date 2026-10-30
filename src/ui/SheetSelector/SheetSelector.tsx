@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaEdges } from '../../lib/safe-area-edges';
 import Svg, { Path } from 'react-native-svg';
-import { Portal } from '../Portal';
+import { ModalHost } from '../ModalHost';
 import { cn } from '../../lib/utils';
 import '../../lib/svg-interop';
 import { selectTriggerLabelStyle } from '../../lib/select-trigger';
@@ -192,16 +192,21 @@ export const SheetSelector: React.FC<SheetSelectorProps> = ({
       </Pressable>
 
       {/*
-        Portalled, not a `Modal`. React Native macOS throws
-        `Exception in HostFunction` when a Modal is mounted — and it mounts even
-        when hidden, so merely having one takes the screen down. Rendering only
-        while open also means a closed picker costs nothing.
-
-        `presentationStyle='pageSheet'` was here too, and is iOS-only.
+        Through `ModalHost`, like every other dialog here: a real React Native
+        `<Modal>` where there is one (iOS, Android), so the picker is a window
+        over the app and the platform slides or fades it in rather than snapping
+        it on. `popover` keeps that window transparent, so the full-bleed phone
+        sheet and the centred panel this already draws are what shows, with
+        their own backdrop. On React Native macOS, where mounting a `<Modal>`
+        throws, `ModalHost` draws it through the app's portal instead.
       */}
-      {isOpen ? (
-        <Portal>
-          {/*
+      <ModalHost
+        visible={isOpen}
+        presentation='popover'
+        animationType={isLarge ? 'fade' : 'slide'}
+        onRequestClose={() => setIsOpen(false)}
+      >
+        {/*
             Full-bleed on a phone, a centred panel on anything larger.
 
             The screen *is* a panel on a phone, so filling it is right there.
@@ -210,117 +215,116 @@ export const SheetSelector: React.FC<SheetSelectorProps> = ({
             breakpoint is `FormModal`'s own, shared, so a dialog and a picker
             opened from inside it cannot disagree about when a window is big.
           */}
-          <View
-            className={
+        <View
+          className={
+            isLarge
+              ? 'flex-1 items-center justify-center bg-black/50 px-4'
+              : 'flex-1'
+          }
+        >
+          <SafeAreaView
+            edges={safeEdges}
+            className={cn('bg-card', isLarge ? 'rounded-xl' : 'flex-1')}
+            style={
               isLarge
-                ? 'flex-1 items-center justify-center bg-black/50 px-4'
-                : 'flex-1'
+                ? {
+                    width: Math.min(PANEL_MAX_WIDTH, width - PANEL_MARGIN),
+                    maxHeight: height * 0.8,
+                  }
+                : undefined
             }
           >
-            <SafeAreaView
-              edges={safeEdges}
-              className={cn('bg-card', isLarge ? 'rounded-xl' : 'flex-1')}
-              style={
-                isLarge
-                  ? {
-                      width: Math.min(PANEL_MAX_WIDTH, width - PANEL_MARGIN),
-                      maxHeight: height * 0.8,
-                    }
-                  : undefined
-              }
-            >
-              <View className='border-border flex-row items-center border-b px-4 py-3'>
-                <Text
-                  className={cn(
-                    typography.size.base,
-                    'text-foreground flex-1 font-semibold'
-                  )}
-                  numberOfLines={1}
-                >
-                  {title ?? ''}
+            <View className='border-border flex-row items-center border-b px-4 py-3'>
+              <Text
+                className={cn(
+                  typography.size.base,
+                  'text-foreground flex-1 font-semibold'
+                )}
+                numberOfLines={1}
+              >
+                {title ?? ''}
+              </Text>
+              <Pressable
+                {...pressProps(() => setIsOpen(false))}
+                hitSlop={8}
+                accessibilityRole='button'
+                {...(cancelLabel ? { accessibilityLabel: cancelLabel } : {})}
+              >
+                <Text className={cn(typography.size.base, 'text-primary')}>
+                  {cancelLabel ?? '✕'}
                 </Text>
-                <Pressable
-                  {...pressProps(() => setIsOpen(false))}
-                  hitSlop={8}
-                  accessibilityRole='button'
-                  {...(cancelLabel ? { accessibilityLabel: cancelLabel } : {})}
-                >
-                  <Text className={cn(typography.size.base, 'text-primary')}>
-                    {cancelLabel ?? '✕'}
-                  </Text>
-                </Pressable>
-              </View>
+              </Pressable>
+            </View>
 
-              {options.length === 0 ? (
-                <View className='flex-1 items-center justify-center p-8'>
-                  <Text className='text-muted-foreground'>
-                    {emptyMessage ?? ''}
-                  </Text>
-                </View>
-              ) : (
-                <FlatList<Row>
-                  data={rows}
-                  keyExtractor={(row: Row) => row.key}
-                  renderItem={({ item }: { item: Row }) =>
-                    item.kind === 'group' ? (
-                      <View className='bg-muted px-4 py-2'>
-                        <Text
-                          className={cn(
-                            typography.size.sm,
-                            'text-muted-foreground font-semibold uppercase'
-                          )}
-                        >
-                          {item.label}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Pressable
-                        {...pressProps(
-                          () => choose(item.option),
-                          item.option.disabled
+            {options.length === 0 ? (
+              <View className='flex-1 items-center justify-center p-8'>
+                <Text className='text-muted-foreground'>
+                  {emptyMessage ?? ''}
+                </Text>
+              </View>
+            ) : (
+              <FlatList<Row>
+                data={rows}
+                keyExtractor={(row: Row) => row.key}
+                renderItem={({ item }: { item: Row }) =>
+                  item.kind === 'group' ? (
+                    <View className='bg-muted px-4 py-2'>
+                      <Text
+                        className={cn(
+                          typography.size.sm,
+                          'text-muted-foreground font-semibold uppercase'
                         )}
-                        disabled={item.option.disabled}
-                        className='border-border/50 flex-row items-center border-b px-4 py-3'
-                        accessibilityRole='menuitem'
-                        accessibilityState={{
-                          selected: item.option.value === value,
-                          disabled: item.option.disabled,
-                        }}
                       >
-                        <Text
-                          className={cn(
-                            typography.size.base,
-                            'text-foreground flex-1',
-                            item.option.disabled && 'opacity-50'
-                          )}
-                          numberOfLines={1}
+                        {item.label}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      {...pressProps(
+                        () => choose(item.option),
+                        item.option.disabled
+                      )}
+                      disabled={item.option.disabled}
+                      className='border-border/50 flex-row items-center border-b px-4 py-3'
+                      accessibilityRole='menuitem'
+                      accessibilityState={{
+                        selected: item.option.value === value,
+                        disabled: item.option.disabled,
+                      }}
+                    >
+                      <Text
+                        className={cn(
+                          typography.size.base,
+                          'text-foreground flex-1',
+                          item.option.disabled && 'opacity-50'
+                        )}
+                        numberOfLines={1}
+                      >
+                        {item.option.label ?? item.option.value}
+                      </Text>
+                      {item.option.value === value ? (
+                        <Svg
+                          width={18}
+                          height={18}
+                          viewBox='0 0 20 20'
+                          className='text-primary'
                         >
-                          {item.option.label ?? item.option.value}
-                        </Text>
-                        {item.option.value === value ? (
-                          <Svg
-                            width={18}
-                            height={18}
-                            viewBox='0 0 20 20'
-                            className='text-primary'
-                          >
-                            <Path
-                              fillRule='evenodd'
-                              d='M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.3 3.3 6.8-6.8a1 1 0 011.4 0z'
-                              clipRule='evenodd'
-                              fill='currentColor'
-                            />
-                          </Svg>
-                        ) : null}
-                      </Pressable>
-                    )
-                  }
-                />
-              )}
-            </SafeAreaView>
-          </View>
-        </Portal>
-      ) : null}
+                          <Path
+                            fillRule='evenodd'
+                            d='M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.3 3.3 6.8-6.8a1 1 0 011.4 0z'
+                            clipRule='evenodd'
+                            fill='currentColor'
+                          />
+                        </Svg>
+                      ) : null}
+                    </Pressable>
+                  )
+                }
+              />
+            )}
+          </SafeAreaView>
+        </View>
+      </ModalHost>
     </>
   );
 };
