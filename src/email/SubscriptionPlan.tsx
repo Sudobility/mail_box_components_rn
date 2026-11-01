@@ -1,0 +1,45 @@
+import React from 'react';
+import { Text, Pressable, type ViewProps } from 'react-native';
+import { cn } from '../index';
+import { getCardVariantColors } from '@sudobility/design';
+import { pressProps } from '../index';
+
+export interface SubscriptionPlanProps extends ViewProps {
+  disabled?: boolean;
+  onPress?: () => void;
+  children?: React.ReactNode;
+}
+
+/**
+ * SubscriptionPlan component for React Native
+ * Subscription plan display container
+ */
+export const SubscriptionPlan: React.FC<SubscriptionPlanProps> = ({
+  className,
+  children,
+  disabled = false,
+  onPress,
+  ...props
+}) => {
+  return (
+    <Pressable
+      {...pressProps(disabled ? undefined : onPress, disabled)}
+      disabled={disabled}
+      accessibilityRole='button'
+      accessibilityLabel='Subscription Plan'
+      accessibilityState={{ disabled }}
+      className={cn(
+        'p-4 rounded-lg',
+        getCardVariantColors('bordered'),
+        disabled && 'opacity-50',
+        'active:bg-muted',
+        className
+      )}
+      {...props}
+    >
+      {children || (
+        <Text className='text-foreground'>SubscriptionPlan Component</Text>
+      )}
+    </Pressable>
+  );
+};

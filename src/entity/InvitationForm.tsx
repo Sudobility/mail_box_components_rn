@@ -1,0 +1,175 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+} from 'react-native';
+import { cn } from '../index';
+import { colors } from '@sudobility/design';
+import type { InvitationFormProps, EntityRole } from './types';
+import { MemberRoleSelector } from './MemberRoleSelector';
+import { pressProps } from '../index';
+
+/**
+ * Validate email format
+ */
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * InvitationForm - Form for inviting members with email input and role selector
+ */
+export const InvitationForm: React.FC<InvitationFormProps> = ({
+  onSubmit,
+  availableRoles = ['admin', 'member', 'viewer', 'guest'],
+  defaultRole = 'member',
+  loading = false,
+  disabled = false,
+  placeholder = 'Enter email address',
+  submitLabel = 'Send Invitation',
+  className = '',
+  style,
+  testID,
+}) => {
+  const [email, setEmail] = useState('');
+  const [selectedRole, setSelectedRole] = useState<EntityRole>(defaultRole);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validate email
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError('Email address is required');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      await onSubmit(trimmedEmail, selectedRole);
+      // Clear form on success
+      setEmail('');
+      setSelectedRole(defaultRole);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to send invitation'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isDisabled = disabled || loading || isSubmitting;
+  const canSubmit = email.trim().length > 0 && !isDisabled;
+
+  return (
+    <View className={cn(className)} style={style} testID={testID}>
+      {/* Email Input */}
+      <View className='mb-4'>
+        <Text className='text-sm font-medium text-muted-foreground mb-2'>
+          Email Address
+        </Text>
+        <TextInput
+          value={email}
+          /* Android's fullscreen extract mode off — the package rule; see
+             components-rn's `lib/text-input.ts`. */
+          disableFullscreenUI
+          onChangeText={handleEmailChange}
+          placeholder={placeholder}
+          placeholderTextColor={colors.raw.neutral[400]}
+          keyboardType='email-address'
+          autoCapitalize='none'
+          autoCorrect={false}
+          autoComplete='email'
+          editable={!isDisabled}
+          className={cn(
+            'px-4 py-3 rounded-xl',
+            'bg-card',
+            'border',
+            error ? 'border-destructive' : 'border-border',
+            'text-foreground',
+            isDisabled && 'opacity-50'
+          )}
+          accessibilityLabel='Email address input'
+          accessibilityHint='Enter the email address of the person you want to invite'
+        />
+        {error && (
+          <Text className='text-sm text-destructive  mt-1'>{error}</Text>
+        )}
+      </View>
+
+      {/* Role Selector */}
+      <View className='mb-4'>
+        <Text className='text-sm font-medium text-muted-foreground mb-2'>
+          Role
+        </Text>
+        <MemberRoleSelector
+          selectedRole={selectedRole}
+          onRoleChange={setSelectedRole}
+          availableRoles={availableRoles}
+          disabled={isDisabled}
+          showDescriptions
+        />
+      </View>
+
+      {/* Submit Button */}
+      <Pressable
+        {...pressProps(handleSubmit, !canSubmit)}
+        disabled={!canSubmit}
+        className={cn(
+          'flex-row items-center justify-center px-6 py-4 rounded-xl',
+          canSubmit
+            ? 'bg-primary dark:bg-primary active:bg-primary dark:active:bg-primary/90'
+            : 'bg-muted dark:bg-muted'
+        )}
+        accessibilityRole='button'
+        accessibilityLabel={submitLabel}
+        accessibilityState={{ disabled: !canSubmit }}
+      >
+        {isSubmitting ? (
+          <>
+            <ActivityIndicator size='small' color={colors.raw.neutral[0]} />
+            <Text className='text-primary-foreground font-semibold ml-2'>
+              Sending...
+            </Text>
+          </>
+        ) : (
+          <Text
+            className={cn(
+              'font-semibold',
+              canSubmit ? 'text-primary-foreground' : 'text-muted-foreground'
+            )}
+          >
+            {submitLabel}
+          </Text>
+        )}
+      </Pressable>
+
+      {/* Help Text */}
+      <Text className='text-xs text-muted-foreground mt-3 text-center'>
+        The invitee will receive an email with instructions to join.
+      </Text>
+    </View>
+  );
+};
+
+export default InvitationForm;

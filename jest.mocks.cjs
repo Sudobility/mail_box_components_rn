@@ -8,6 +8,30 @@ function createDeepProxy() {
       if (prop === 'then') return undefined;
       if (prop === Symbol.toPrimitive) return () => '';
       if (prop === Symbol.iterator) return undefined;
+      // Behave like an (empty) string for the handful of real string methods
+      // that token-parsing code chains on (e.g. `token.split(' ').find(...)`),
+      // so it doesn't crash — it just gets empty results and falls back. The
+      // allowlist avoids legacy String.prototype HTML methods (link, sub, bold,
+      // …) that collide with design-token names like `textVariants.link`.
+      const STRING_METHODS = [
+        'split',
+        'includes',
+        'startsWith',
+        'endsWith',
+        'trim',
+        'replace',
+        'replaceAll',
+        'toLowerCase',
+        'toUpperCase',
+        'indexOf',
+        'lastIndexOf',
+        'slice',
+        'match',
+        'search',
+      ];
+      if (typeof prop === 'string' && STRING_METHODS.includes(prop)) {
+        return String.prototype[prop].bind('');
+      }
       return createDeepProxy();
     },
     apply: () => '',

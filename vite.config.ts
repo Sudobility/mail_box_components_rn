@@ -1,6 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { readdirSync, existsSync } from 'fs';
 import dts from 'vite-plugin-dts';
+
+// Each folded-in module (src/<name>/index.ts) is its own build entry, exposed
+// via a subpath export (e.g. `@sudobility/components-rn/subscription`).
+// Internal dirs (lib, ui, __tests__) are part of the root `index` entry.
+const moduleEntries = Object.fromEntries(
+  readdirSync(resolve(__dirname, 'src'), { withFileTypes: true })
+    .filter(
+      d =>
+        d.isDirectory() &&
+        !['lib', 'ui', '__tests__'].includes(d.name) &&
+        existsSync(resolve(__dirname, 'src', d.name, 'index.ts'))
+    )
+    .map(d => [d.name, resolve(__dirname, 'src', d.name, 'index.ts')])
+);
 
 export default defineConfig({
   plugins: [
@@ -18,10 +33,15 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'SudobilityComponentsRN',
+      // Multi-entry: the root plus each folded-in module, exposed via subpath
+      // exports (e.g. `@sudobility/components-rn/subscription`).
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        ...moduleEntries,
+      },
       formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'esm' : format}.js`,
+      fileName: (format, entryName) =>
+        `${entryName}.${format === 'es' ? 'esm' : format}.js`,
     },
     rollupOptions: {
       external: [
@@ -39,8 +59,13 @@ export default defineConfig({
         'react-native-safe-area-context',
         'react-native-svg',
         '@sudobility/design',
+        '@sudobility/types',
         'clsx',
         'class-variance-authority',
+        // Third-party deps pulled in by folded-in modules — kept external so
+        // consumers provide them (and so their JSX-in-.js builds aren't parsed).
+        /^expo(-|\/|$)/,
+        /^@react-native-firebase\//,
       ],
       output: {
         exports: 'named',

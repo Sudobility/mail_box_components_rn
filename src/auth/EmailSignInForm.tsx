@@ -1,0 +1,129 @@
+/**
+ * EmailSignInForm - Email sign-in form for React Native
+ */
+
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable } from 'react-native';
+import { cn } from '../index';
+import { textVariants, variants as v, colors } from '@sudobility/design';
+import type { EmailSignInFormProps } from './types';
+import { useAuthStatus } from './AuthProvider';
+import { pressProps } from '../index';
+
+/**
+ * Email sign-in form component
+ */
+export const EmailSignInForm: React.FC<EmailSignInFormProps> = ({
+  onSwitchToSignUp,
+  onSwitchToForgotPassword,
+  onSuccess,
+  onTrack,
+  trackingLabel,
+  componentName = 'EmailSignInForm',
+}) => {
+  const { texts, signInWithEmail, loading, error, clearError } =
+    useAuthStatus();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async () => {
+    onTrack?.({
+      action: 'form_submit',
+      trackingLabel,
+      componentName,
+    });
+
+    clearError();
+    await signInWithEmail(email, password);
+    onSuccess?.();
+  };
+
+  return (
+    <View className='gap-4'>
+      <View className='gap-2'>
+        <Text className={textVariants.label.default()}>{texts.email}</Text>
+        <TextInput
+          value={email}
+          /* Android's fullscreen extract mode off — the package rule; see
+             components-rn's `lib/text-input.ts`. */
+          disableFullscreenUI
+          onChangeText={setEmail}
+          placeholder={texts.emailPlaceholder}
+          keyboardType='email-address'
+          autoCapitalize='none'
+          autoCorrect={false}
+          className={cn(v.input.default(), 'px-4 py-3 rounded-lg')}
+          placeholderTextColor={colors.raw.neutral[400]}
+        />
+      </View>
+
+      <View className='gap-2'>
+        <Text className={textVariants.label.default()}>{texts.password}</Text>
+        <TextInput
+          value={password}
+          /* Android's fullscreen extract mode off — the package rule; see
+             components-rn's `lib/text-input.ts`. */
+          disableFullscreenUI
+          onChangeText={setPassword}
+          placeholder={texts.passwordPlaceholder}
+          secureTextEntry
+          className={cn(v.input.default(), 'px-4 py-3 rounded-lg')}
+          placeholderTextColor={colors.raw.neutral[400]}
+        />
+      </View>
+
+      {error && <Text className={textVariants.label.error()}>{error}</Text>}
+
+      <Pressable
+        {...pressProps(handleSubmit, loading || !email || !password)}
+        disabled={loading || !email || !password}
+        className={cn(
+          v.button.primary.default(),
+          'py-3 px-4 rounded-lg',
+          (loading || !email || !password) && 'opacity-50'
+        )}
+        accessibilityRole='button'
+        accessibilityLabel={texts.signIn}
+        accessibilityState={{ disabled: loading || !email || !password }}
+      >
+        <Text className='font-medium text-primary-foreground'>
+          {loading ? texts.loading : texts.signIn}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        {...pressProps(() => {
+          onTrack?.({
+            action: 'switch_mode',
+            trackingLabel,
+            componentName,
+          });
+          onSwitchToForgotPassword();
+        })}
+        className='items-center py-2'
+        accessibilityRole='button'
+      >
+        <Text className={textVariants.link.subtle()}>
+          {texts.forgotPassword}
+        </Text>
+      </Pressable>
+
+      <View className='flex-row items-center justify-center gap-1'>
+        <Text className={textVariants.body.sm()}>{texts.noAccount}</Text>
+        <Pressable
+          {...pressProps(() => {
+            onTrack?.({
+              action: 'switch_mode',
+              trackingLabel,
+              componentName,
+            });
+            onSwitchToSignUp();
+          })}
+          accessibilityRole='button'
+        >
+          <Text className={textVariants.link.subtle()}>{texts.signUp}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};

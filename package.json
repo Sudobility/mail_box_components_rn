@@ -1,6 +1,6 @@
 {
   "name": "@sudobility/components-rn",
-  "version": "1.0.135",
+  "version": "1.0.136",
   "description": "React Native UI components and design system - Ported from @sudobility/components",
   "type": "module",
   "main": "dist/index.esm.js",
@@ -30,6 +30,294 @@
       "react-native": "./src/index.ts",
       "import": "./dist/index.esm.js",
       "default": "./dist/index.esm.js"
+    },
+    "./agriculture": {
+      "types": "./dist/agriculture.d.ts",
+      "react-native": "./src/agriculture/index.ts",
+      "import": "./dist/agriculture.esm.js",
+      "default": "./dist/agriculture.esm.js"
+    },
+    "./analytics": {
+      "types": "./dist/analytics.d.ts",
+      "react-native": "./src/analytics/index.ts",
+      "import": "./dist/analytics.esm.js",
+      "default": "./dist/analytics.esm.js"
+    },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "react-native": "./src/auth/index.ts",
+      "import": "./dist/auth.esm.js",
+      "default": "./dist/auth.esm.js"
+    },
+    "./automotive": {
+      "types": "./dist/automotive.d.ts",
+      "react-native": "./src/automotive/index.ts",
+      "import": "./dist/automotive.esm.js",
+      "default": "./dist/automotive.esm.js"
+    },
+    "./collaboration": {
+      "types": "./dist/collaboration.d.ts",
+      "react-native": "./src/collaboration/index.ts",
+      "import": "./dist/collaboration.esm.js",
+      "default": "./dist/collaboration.esm.js"
+    },
+    "./communication": {
+      "types": "./dist/communication.d.ts",
+      "react-native": "./src/communication/index.ts",
+      "import": "./dist/communication.esm.js",
+      "default": "./dist/communication.esm.js"
+    },
+    "./construction": {
+      "types": "./dist/construction.d.ts",
+      "react-native": "./src/construction/index.ts",
+      "import": "./dist/construction.esm.js",
+      "default": "./dist/construction.esm.js"
+    },
+    "./design": {
+      "types": "./dist/design.d.ts",
+      "react-native": "./src/design/index.ts",
+      "import": "./dist/design.esm.js",
+      "default": "./dist/design.esm.js"
+    },
+    "./devops": {
+      "types": "./dist/devops.d.ts",
+      "react-native": "./src/devops/index.ts",
+      "import": "./dist/devops.esm.js",
+      "default": "./dist/devops.esm.js"
+    },
+    "./documents": {
+      "types": "./dist/documents.d.ts",
+      "react-native": "./src/documents/index.ts",
+      "import": "./dist/documents.esm.js",
+      "default": "./dist/documents.esm.js"
+    },
+    "./ecommerce": {
+      "types": "./dist/ecommerce.d.ts",
+      "react-native": "./src/ecommerce/index.ts",
+      "import": "./dist/ecommerce.esm.js",
+      "default": "./dist/ecommerce.esm.js"
+    },
+    "./education": {
+      "types": "./dist/education.d.ts",
+      "react-native": "./src/education/index.ts",
+      "import": "./dist/education.esm.js",
+      "default": "./dist/education.esm.js"
+    },
+    "./email": {
+      "types": "./dist/email.d.ts",
+      "react-native": "./src/email/index.ts",
+      "import": "./dist/email.esm.js",
+      "default": "./dist/email.esm.js"
+    },
+    "./energy": {
+      "types": "./dist/energy.d.ts",
+      "react-native": "./src/energy/index.ts",
+      "import": "./dist/energy.esm.js",
+      "default": "./dist/energy.esm.js"
+    },
+    "./entertainment": {
+      "types": "./dist/entertainment.d.ts",
+      "react-native": "./src/entertainment/index.ts",
+      "import": "./dist/entertainment.esm.js",
+      "default": "./dist/entertainment.esm.js"
+    },
+    "./entity": {
+      "types": "./dist/entity.d.ts",
+      "react-native": "./src/entity/index.ts",
+      "import": "./dist/entity.esm.js",
+      "default": "./dist/entity.esm.js"
+    },
+    "./events": {
+      "types": "./dist/events.d.ts",
+      "react-native": "./src/events/index.ts",
+      "import": "./dist/events.esm.js",
+      "default": "./dist/events.esm.js"
+    },
+    "./finance": {
+      "types": "./dist/finance.d.ts",
+      "react-native": "./src/finance/index.ts",
+      "import": "./dist/finance.esm.js",
+      "default": "./dist/finance.esm.js"
+    },
+    "./fitness": {
+      "types": "./dist/fitness.d.ts",
+      "react-native": "./src/fitness/index.ts",
+      "import": "./dist/fitness.esm.js",
+      "default": "./dist/fitness.esm.js"
+    },
+    "./food": {
+      "types": "./dist/food.d.ts",
+      "react-native": "./src/food/index.ts",
+      "import": "./dist/food.esm.js",
+      "default": "./dist/food.esm.js"
+    },
+    "./gaming": {
+      "types": "./dist/gaming.d.ts",
+      "react-native": "./src/gaming/index.ts",
+      "import": "./dist/gaming.esm.js",
+      "default": "./dist/gaming.esm.js"
+    },
+    "./government": {
+      "types": "./dist/government.d.ts",
+      "react-native": "./src/government/index.ts",
+      "import": "./dist/government.esm.js",
+      "default": "./dist/government.esm.js"
+    },
+    "./healthcare": {
+      "types": "./dist/healthcare.d.ts",
+      "react-native": "./src/healthcare/index.ts",
+      "import": "./dist/healthcare.esm.js",
+      "default": "./dist/healthcare.esm.js"
+    },
+    "./hr": {
+      "types": "./dist/hr.d.ts",
+      "react-native": "./src/hr/index.ts",
+      "import": "./dist/hr.esm.js",
+      "default": "./dist/hr.esm.js"
+    },
+    "./insurance": {
+      "types": "./dist/insurance.d.ts",
+      "react-native": "./src/insurance/index.ts",
+      "import": "./dist/insurance.esm.js",
+      "default": "./dist/insurance.esm.js"
+    },
+    "./interaction": {
+      "types": "./dist/interaction.d.ts",
+      "react-native": "./src/interaction/index.ts",
+      "import": "./dist/interaction.esm.js",
+      "default": "./dist/interaction.esm.js"
+    },
+    "./iot": {
+      "types": "./dist/iot.d.ts",
+      "react-native": "./src/iot/index.ts",
+      "import": "./dist/iot.esm.js",
+      "default": "./dist/iot.esm.js"
+    },
+    "./legal": {
+      "types": "./dist/legal.d.ts",
+      "react-native": "./src/legal/index.ts",
+      "import": "./dist/legal.esm.js",
+      "default": "./dist/legal.esm.js"
+    },
+    "./logistics": {
+      "types": "./dist/logistics.d.ts",
+      "react-native": "./src/logistics/index.ts",
+      "import": "./dist/logistics.esm.js",
+      "default": "./dist/logistics.esm.js"
+    },
+    "./manufacturing": {
+      "types": "./dist/manufacturing.d.ts",
+      "react-native": "./src/manufacturing/index.ts",
+      "import": "./dist/manufacturing.esm.js",
+      "default": "./dist/manufacturing.esm.js"
+    },
+    "./marketing": {
+      "types": "./dist/marketing.d.ts",
+      "react-native": "./src/marketing/index.ts",
+      "import": "./dist/marketing.esm.js",
+      "default": "./dist/marketing.esm.js"
+    },
+    "./media": {
+      "types": "./dist/media.d.ts",
+      "react-native": "./src/media/index.ts",
+      "import": "./dist/media.esm.js",
+      "default": "./dist/media.esm.js"
+    },
+    "./monitoring": {
+      "types": "./dist/monitoring.d.ts",
+      "react-native": "./src/monitoring/index.ts",
+      "import": "./dist/monitoring.esm.js",
+      "default": "./dist/monitoring.esm.js"
+    },
+    "./nonprofit": {
+      "types": "./dist/nonprofit.d.ts",
+      "react-native": "./src/nonprofit/index.ts",
+      "import": "./dist/nonprofit.esm.js",
+      "default": "./dist/nonprofit.esm.js"
+    },
+    "./project-management": {
+      "types": "./dist/project-management.d.ts",
+      "react-native": "./src/project-management/index.ts",
+      "import": "./dist/project-management.esm.js",
+      "default": "./dist/project-management.esm.js"
+    },
+    "./ratelimit": {
+      "types": "./dist/ratelimit.d.ts",
+      "react-native": "./src/ratelimit/index.ts",
+      "import": "./dist/ratelimit.esm.js",
+      "default": "./dist/ratelimit.esm.js"
+    },
+    "./realestate": {
+      "types": "./dist/realestate.d.ts",
+      "react-native": "./src/realestate/index.ts",
+      "import": "./dist/realestate.esm.js",
+      "default": "./dist/realestate.esm.js"
+    },
+    "./retail": {
+      "types": "./dist/retail.d.ts",
+      "react-native": "./src/retail/index.ts",
+      "import": "./dist/retail.esm.js",
+      "default": "./dist/retail.esm.js"
+    },
+    "./scheduling": {
+      "types": "./dist/scheduling.d.ts",
+      "react-native": "./src/scheduling/index.ts",
+      "import": "./dist/scheduling.esm.js",
+      "default": "./dist/scheduling.esm.js"
+    },
+    "./scientific": {
+      "types": "./dist/scientific.d.ts",
+      "react-native": "./src/scientific/index.ts",
+      "import": "./dist/scientific.esm.js",
+      "default": "./dist/scientific.esm.js"
+    },
+    "./search": {
+      "types": "./dist/search.d.ts",
+      "react-native": "./src/search/index.ts",
+      "import": "./dist/search.esm.js",
+      "default": "./dist/search.esm.js"
+    },
+    "./security": {
+      "types": "./dist/security.d.ts",
+      "react-native": "./src/security/index.ts",
+      "import": "./dist/security.esm.js",
+      "default": "./dist/security.esm.js"
+    },
+    "./social": {
+      "types": "./dist/social.d.ts",
+      "react-native": "./src/social/index.ts",
+      "import": "./dist/social.esm.js",
+      "default": "./dist/social.esm.js"
+    },
+    "./subscription": {
+      "types": "./dist/subscription.d.ts",
+      "react-native": "./src/subscription/index.ts",
+      "import": "./dist/subscription.esm.js",
+      "default": "./dist/subscription.esm.js"
+    },
+    "./travel": {
+      "types": "./dist/travel.d.ts",
+      "react-native": "./src/travel/index.ts",
+      "import": "./dist/travel.esm.js",
+      "default": "./dist/travel.esm.js"
+    },
+    "./visualization": {
+      "types": "./dist/visualization.d.ts",
+      "react-native": "./src/visualization/index.ts",
+      "import": "./dist/visualization.esm.js",
+      "default": "./dist/visualization.esm.js"
+    },
+    "./web3": {
+      "types": "./dist/web3.d.ts",
+      "react-native": "./src/web3/index.ts",
+      "import": "./dist/web3.esm.js",
+      "default": "./dist/web3.esm.js"
+    },
+    "./workflow": {
+      "types": "./dist/workflow.d.ts",
+      "react-native": "./src/workflow/index.ts",
+      "import": "./dist/workflow.esm.js",
+      "default": "./dist/workflow.esm.js"
     },
     "./package.json": "./package.json"
   },
@@ -79,7 +367,8 @@
     "react-native-reanimated": ">=3.0.0",
     "react-native-safe-area-context": ">=4.0.0",
     "react-native-svg": ">=13.0.0",
-    "tailwind-merge": ">=2.0.0"
+    "tailwind-merge": ">=2.0.0",
+    "expo-clipboard": ">=5.0.0"
   },
   "devDependencies": {
     "@react-native-community/slider": "~5.2.2",
@@ -125,7 +414,8 @@
     "typescript": "~6.0.3",
     "vite": "~8.3.5",
     "vite-plugin-dts": "~4.5.4",
-    "vitest": "~4.1.12"
+    "vitest": "~4.1.12",
+    "expo-clipboard": "^7.0.0"
   },
   "repository": {
     "type": "git",
@@ -141,5 +431,10 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "license": "BUSL-1.1"
+  "license": "BUSL-1.1",
+  "peerDependenciesMeta": {
+    "expo-clipboard": {
+      "optional": true
+    }
+  }
 }
