@@ -96,7 +96,7 @@ describe('SegmentedControl option', () => {
 describe('SubscriptionLayout primary action', () => {
   const tree = (action: {
     label: string;
-    onPress: () => void;
+    onClick: () => void;
     disabled?: boolean;
   }) => (
     <SubscriptionLayout title='Choose a Plan' primaryAction={action}>
@@ -105,28 +105,28 @@ describe('SubscriptionLayout primary action', () => {
   );
 
   it('runs its handler on a press', () => {
-    const onPress = jest.fn();
-    render(tree({ label: 'Subscribe', onPress }));
+    const onClick = jest.fn();
+    render(tree({ label: 'Subscribe', onClick }));
     fireEvent.press(screen.getByLabelText('Subscribe'));
-    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('runs its handler on an accessibility tap', () => {
-    const onPress = jest.fn();
-    render(tree({ label: 'Subscribe', onPress }));
+    const onClick = jest.fn();
+    render(tree({ label: 'Subscribe', onClick }));
     fireEvent(screen.getByLabelText('Subscribe'), 'accessibilityTap');
-    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('does neither when disabled', () => {
-    const onPress = jest.fn();
-    render(tree({ label: 'Subscribe', onPress, disabled: true }));
+    const onClick = jest.fn();
+    render(tree({ label: 'Subscribe', onClick, disabled: true }));
     const button = screen.getByLabelText('Subscribe');
     expect(touchableFor(button).props.onAccessibilityTap).toBeUndefined();
     expect(button.props.accessibilityState.disabled).toBe(true);
     fireEvent.press(button);
     fireEvent(button, 'accessibilityTap');
-    expect(onPress).not.toHaveBeenCalled();
+    expect(onClick).not.toHaveBeenCalled();
   });
 });
 
@@ -179,7 +179,7 @@ describe('SubscriptionTile CTA button', () => {
       features={['Everything']}
       isSelected={false}
       onSelect={jest.fn()}
-      ctaButton={{ label: 'Start trial', onPress }}
+      ctaButton={{ label: 'Start trial', onClick: onPress }}
       disabled={disabled}
     />
   );

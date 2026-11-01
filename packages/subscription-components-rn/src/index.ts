@@ -4,7 +4,9 @@
  * Subscription UI components for React Native with RevenueCat integration.
  * All components support full localization - text labels are passed by the consumer.
  *
- * Aligned with @sudobility/subscription-components (web).
+ * Faithful mirror of @sudobility/subscription-components (web): same component
+ * names, props, properties and behavior — React Native primitives instead of
+ * the DOM.
  */
 
 // Components
@@ -14,24 +16,21 @@ export {
 } from './SubscriptionTile';
 export {
   SubscriptionLayout,
-  SubscriptionDivider,
-  SubscriptionFooter,
   type SubscriptionLayoutProps,
   type SubscriptionLayoutVariant,
-  type SubscriptionDividerProps,
-  type SubscriptionFooterProps,
+  type SubscriptionStatusConfig,
+  type ActionButtonConfig,
 } from './SubscriptionLayout';
 export {
   SegmentedControl,
-  PeriodSelector,
   type SegmentedControlProps,
   type SegmentedControlOption,
-  type PeriodSelectorProps,
 } from './SegmentedControl';
 export {
   SubscriptionProvider,
   useSubscriptionContext,
-  SubscriptionContext,
+  clearRevenueCatCheckoutSessions,
+  closeRevenueCatInstance,
   type SubscriptionProviderProps,
 } from './SubscriptionProvider';
 
@@ -46,8 +45,14 @@ export type {
   DiscountBadgeConfig,
   PremiumCalloutConfig,
   FreeTileConfig,
-  SubscriptionStatusConfig,
-  ActionButtonConfig,
-  SubscriptionTileTrackingData,
-  SubscriptionLayoutTrackingData,
 } from './types';
+
+// NOTE: the web package also exports a `SubscriptionService` — a pure
+// transformer of @revenuecat/purchases-js `Offerings`/`CustomerInfo`. On React
+// Native the same RevenueCat data is produced by @sudobility/subscription_lib
+// (the native react-native-purchases adapter), which the pages use, so a
+// parallel service here would be unused and SDK-mismatched; it is intentionally
+// not mirrored.
+
+// Utilities
+export { cn } from './lib/cn';

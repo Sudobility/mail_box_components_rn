@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Linking } from 'react-native';
 import { cn } from '@sudobility/components-rn';
 import type {
   BadgeConfig,
@@ -52,8 +52,8 @@ export interface SubscriptionTileProps {
   /** Whether this tile is enabled/selectable (false = grayed out, no indicator) */
   enabled?: boolean;
 
-  /** Accessibility label */
-  accessibilityLabel?: string;
+  /** Accessibility label (named `ariaLabel` to mirror the web component) */
+  ariaLabel?: string;
 
   /** Optional tracking callback */
   onTrack?: (data: SubscriptionTileTrackingData) => void;
@@ -102,7 +102,7 @@ export function SubscriptionTile({
   children,
   disabled = false,
   enabled = true,
-  accessibilityLabel,
+  ariaLabel,
   onTrack,
   trackingLabel,
   componentName = 'SubscriptionTile',
@@ -122,7 +122,8 @@ export function SubscriptionTile({
   // - Not enabled: Grayed out with opacity-50
   // - Default: Gray background
   const containerClasses = cn(
-    'relative rounded-2xl p-6',
+    // `shadow-md` mirrors the web tile, which carries it on every state.
+    'relative rounded-2xl p-6 shadow-md',
     isSelected
       ? 'bg-primary border-2 border-primary'
       : isCurrentPlan
@@ -142,7 +143,13 @@ export function SubscriptionTile({
 
   const handleCtaPress = () => {
     onTrack?.({ action: 'cta_click', trackingLabel, componentName });
-    ctaButton?.onPress?.();
+    // Mirror web CtaButtonConfig: a link (`href`) opens via Linking, otherwise
+    // the `onClick` handler runs.
+    if (ctaButton?.href) {
+      Linking.openURL(ctaButton.href);
+    } else {
+      ctaButton?.onClick?.();
+    }
   };
 
   const defaultLabel = `${title} - ${price}${periodLabel || ''}`;
@@ -156,7 +163,7 @@ export function SubscriptionTile({
         checked: isCtaMode ? undefined : isSelected,
         disabled: !isInteractive,
       }}
-      accessibilityLabel={accessibilityLabel || defaultLabel}
+      accessibilityLabel={ariaLabel || defaultLabel}
       className={containerClasses}
     >
       {/* Top Badge - vertically centered on the top border */}

@@ -128,7 +128,7 @@ describe('SubscriptionTile', () => {
     render(
       <SubscriptionTile
         {...baseProps}
-        ctaButton={{ label: 'Subscribe Now', onPress: onCtaPress }}
+        ctaButton={{ label: 'Subscribe Now', onClick: onCtaPress }}
       />
     );
 
@@ -142,7 +142,7 @@ describe('SubscriptionTile', () => {
     render(
       <SubscriptionTile
         {...baseProps}
-        ctaButton={{ label: 'Subscribe Now', onPress: onCtaPress }}
+        ctaButton={{ label: 'Subscribe Now', onClick: onCtaPress }}
       />
     );
 
@@ -156,7 +156,7 @@ describe('SubscriptionTile', () => {
       <SubscriptionTile
         {...baseProps}
         onSelect={onSelect}
-        ctaButton={{ label: 'Buy', onPress: jest.fn() }}
+        ctaButton={{ label: 'Buy', onClick: jest.fn() }}
       />
     );
 
@@ -189,7 +189,7 @@ describe('SubscriptionTile', () => {
     render(
       <SubscriptionTile
         {...baseProps}
-        ctaButton={{ label: 'Buy', onPress: jest.fn() }}
+        ctaButton={{ label: 'Buy', onClick: jest.fn() }}
         onTrack={onTrack}
         trackingLabel='pro_cta'
       />
@@ -225,7 +225,7 @@ describe('SubscriptionTile', () => {
     render(
       <SubscriptionTile
         {...baseProps}
-        accessibilityLabel='Pro plan nine ninety nine per month'
+        ariaLabel='Pro plan nine ninety nine per month'
       />
     );
 

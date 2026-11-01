@@ -6,7 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { cn } from '@sudobility/components-rn';
+import { cn, pressProps } from '@sudobility/components-rn';
 import { SubscriptionTile } from './SubscriptionTile';
 import { PlatformIcon, platformDisplayName } from './PlatformIcon';
 import type {
@@ -15,7 +15,8 @@ import type {
   SubscriptionStatusConfig,
   ActionButtonConfig,
 } from './types';
-import { pressProps } from '@sudobility/components-rn';
+
+export type { SubscriptionStatusConfig, ActionButtonConfig } from './types';
 
 /**
  * Layout variant:
@@ -25,13 +26,12 @@ import { pressProps } from '@sudobility/components-rn';
 export type SubscriptionLayoutVariant = 'selection' | 'cta';
 
 export interface SubscriptionLayoutProps {
-  /** Section title */
+  /** Section title (accepted for API compatibility; not rendered as a heading) */
   title: string;
   /** Subscription tiles to render */
   children: ReactNode;
   /** Error message to display */
   error?: string | null;
-
   /**
    * Layout variant
    * - 'selection': User selects a tile, then presses primary action button
@@ -39,37 +39,29 @@ export interface SubscriptionLayoutProps {
    * @default 'selection'
    */
   variant?: SubscriptionLayoutVariant;
-
   /** Current subscription status configuration */
   currentStatus?: SubscriptionStatusConfig;
-
   /** Primary action button (e.g., "Subscribe Now") - only shown in 'selection' variant */
   primaryAction?: ActionButtonConfig;
-
   /** Secondary action button (e.g., "Restore Purchase") - only shown in 'selection' variant */
   secondaryAction?: ActionButtonConfig;
-
+  /** Minimum tile width in pixels (default: 240) */
+  minTileWidth?: number;
   /** Additional NativeWind classes */
   className?: string;
-
   /** Custom header content */
   headerContent?: ReactNode;
-
   /** Content to render above the product tiles (e.g., billing period selector) */
   aboveProducts?: ReactNode;
-
   /** Custom footer content (rendered above action buttons) */
   footerContent?: ReactNode;
-
   /** Label for "Current Status" section - for localization */
   currentStatusLabel?: string;
-
   /**
    * Configuration for the free tile - only used when variant is 'cta'
-   * When provided, a "Free" subscription tile will be shown at the start of the list
+   * When provided, a "Free" subscription tile will be shown at the start of the grid
    */
   freeTileConfig?: FreeTileConfig;
-
   /** Optional tracking callback */
   onTrack?: (data: SubscriptionLayoutTrackingData) => void;
   /** Optional tracking label */
@@ -81,24 +73,28 @@ export interface SubscriptionLayoutProps {
 /**
  * SubscriptionLayout - Container component for subscription selection UI
  *
- * Provides a consistent layout with:
+ * Mirrors @sudobility/subscription-components' SubscriptionLayout (web):
  * - Optional current status display
- * - Title heading
- * - Scrollable list of subscription tiles
+ * - A segmented control (`aboveProducts`) pinned at the top
+ * - A scrolling region with the subscription tiles / content
  * - Error message display
- * - Primary and optional secondary action buttons
+ * - Primary and optional secondary action buttons (selection variant)
  *
- * All labels are passed by the consumer for full localization control.
+ * The subscription surface owns its own scroll (the segmented control stays
+ * fixed while the tiles scroll), so a surrounding pane need not scroll. All
+ * labels are passed by the consumer for full localization control.
  */
 export function SubscriptionLayout({
-  title,
+  // `title` is accepted for API parity with the web component but is not
+  // rendered as a heading — the surface shows no title above the controls.
   children,
   error,
   variant = 'selection',
   currentStatus,
   primaryAction,
   secondaryAction,
-  className = '',
+  minTileWidth: _minTileWidth = 240,
+  className,
   headerContent,
   aboveProducts,
   footerContent,
@@ -114,24 +110,30 @@ export function SubscriptionLayout({
 
   const handlePrimaryPress = () => {
     onTrack?.({ action: 'primary_action', trackingLabel, componentName });
-    primaryAction?.onPress();
+    primaryAction?.onClick();
   };
 
   const handleSecondaryPress = () => {
     onTrack?.({ action: 'secondary_action', trackingLabel, componentName });
-    secondaryAction?.onPress();
+    secondaryAction?.onClick();
   };
 
   return (
-    <ScrollView
-      className='flex-1'
-      contentContainerClassName='p-4'
-      showsVerticalScrollIndicator={false}
-    >
-      <View className={className}>
-        {/* Custom Header Content */}
-        {headerContent}
+    <View className={cn('flex-1', className)}>
+      {/* Custom Header Content */}
+      {headerContent}
 
+      {/* Segmented control: stays fixed at the top; the content below scrolls. */}
+      {aboveProducts}
+
+      {/* Scrolling region — the subscription surface owns its own scroll, so
+          the pane around it need not scroll. `pt-1 px-0.5` leaves room for a
+          tile's top badge (e.g. "Current"), which overflows the tile's top. */}
+      <ScrollView
+        className='flex-1'
+        contentContainerClassName='pt-4'
+        showsVerticalScrollIndicator={false}
+      >
         {/* Current Status Section */}
         {currentStatus && (
           <View className='mb-6'>
@@ -203,14 +205,11 @@ export function SubscriptionLayout({
           </View>
         )}
 
-        {/* Section Title */}
-        <Text className='text-2xl font-bold text-foreground mb-4'>{title}</Text>
-
-        {/* Above Products Content (e.g., billing period selector) */}
-        {aboveProducts}
-
-        {/* Subscription Tiles */}
-        <View className='gap-4'>
+        {/* Subscription tiles (features + options). Single-column stack: the
+            web uses an auto-fit grid, but the subscription pages render
+            full-width content (offering card + duration list), so a column
+            matches that layout on RN. */}
+        <View className='gap-6'>
           {/* Free Tile - only shown in 'cta' variant when enabled */}
           {shouldShowFreeTile && (
             <SubscriptionTile
@@ -237,168 +236,67 @@ export function SubscriptionLayout({
             <Text className='text-destructive'>{error}</Text>
           </View>
         )}
+      </ScrollView>
 
-        {/* Action Buttons - only shown in 'selection' variant */}
-        {showActionButtons && (
-          <View className='gap-3 mt-6'>
-            {secondaryAction && (
-              <Pressable
-                {...pressProps(
-                  handleSecondaryPress,
-                  secondaryAction.disabled || secondaryAction.loading
-                )}
-                disabled={secondaryAction.disabled || secondaryAction.loading}
-                accessibilityRole='button'
-                accessibilityLabel={secondaryAction.label}
-                accessibilityState={{
-                  disabled: secondaryAction.disabled || secondaryAction.loading,
-                  busy: secondaryAction.loading,
-                }}
-                className={cn(
-                  'py-3 rounded-lg border border-border items-center',
-                  (secondaryAction.disabled || secondaryAction.loading) &&
-                    'opacity-50'
-                )}
-              >
-                {secondaryAction.loading ? (
-                  <ActivityIndicator size='small' />
-                ) : (
-                  <Text className='font-semibold text-foreground'>
-                    {secondaryAction.label}
-                  </Text>
-                )}
-              </Pressable>
-            )}
-
+      {/* Action Buttons - only shown in 'selection' variant */}
+      {showActionButtons && (
+        <View className='gap-3 pt-3 border-t border-border'>
+          {secondaryAction && (
             <Pressable
               {...pressProps(
-                handlePrimaryPress,
-                primaryAction.disabled || primaryAction.loading
+                handleSecondaryPress,
+                secondaryAction.disabled || secondaryAction.loading
               )}
-              disabled={primaryAction.disabled || primaryAction.loading}
+              disabled={secondaryAction.disabled || secondaryAction.loading}
               accessibilityRole='button'
-              accessibilityLabel={primaryAction.label}
+              accessibilityLabel={secondaryAction.label}
               accessibilityState={{
-                disabled: primaryAction.disabled || primaryAction.loading,
-                busy: primaryAction.loading,
+                disabled: secondaryAction.disabled || secondaryAction.loading,
+                busy: secondaryAction.loading,
               }}
               className={cn(
-                'py-3 rounded-lg bg-primary items-center',
-                (primaryAction.disabled || primaryAction.loading) &&
+                'py-3 rounded-lg border border-border items-center',
+                (secondaryAction.disabled || secondaryAction.loading) &&
                   'opacity-50'
               )}
             >
-              {primaryAction.loading ? (
-                <ActivityIndicator size='small' color='white' />
+              {secondaryAction.loading ? (
+                <ActivityIndicator size='small' />
               ) : (
-                <Text className='font-semibold text-primary-foreground'>
-                  {primaryAction.label}
+                <Text className='font-semibold text-foreground'>
+                  {secondaryAction.label}
                 </Text>
               )}
             </Pressable>
-          </View>
-        )}
-      </View>
-    </ScrollView>
-  );
-}
+          )}
 
-/**
- * Section divider for subscription layouts
- */
-export interface SubscriptionDividerProps {
-  /** Optional label text */
-  label?: string;
-  /** Custom class */
-  className?: string;
-}
-
-export function SubscriptionDivider({
-  label,
-  className = '',
-}: SubscriptionDividerProps) {
-  if (label) {
-    return (
-      <View className={cn('flex-row items-center gap-4 my-4', className)}>
-        <View className='flex-1 h-px bg-muted' />
-        <Text className='text-sm text-muted-foreground'>{label}</Text>
-        <View className='flex-1 h-px bg-muted' />
-      </View>
-    );
-  }
-
-  return <View className={cn('h-px bg-muted my-4', className)} />;
-}
-
-/**
- * Footer with terms and restore button
- */
-export interface SubscriptionFooterProps {
-  /** Terms text */
-  termsText?: string;
-  /** Privacy link text */
-  privacyText?: string;
-  /** Restore purchases text */
-  restoreText?: string;
-  /** Called when restore is pressed */
-  onRestore?: () => void;
-  /** Called when terms is pressed */
-  onTermsPress?: () => void;
-  /** Called when privacy is pressed */
-  onPrivacyPress?: () => void;
-  /** Custom class */
-  className?: string;
-}
-
-export function SubscriptionFooter({
-  termsText = 'Terms of Service',
-  privacyText = 'Privacy Policy',
-  restoreText = 'Restore Purchases',
-  onRestore,
-  onTermsPress,
-  onPrivacyPress,
-  className = '',
-}: SubscriptionFooterProps) {
-  return (
-    <View className={cn('items-center gap-3', className)}>
-      {/* Restore Button */}
-      {onRestore && (
-        <Text
-          className='text-sm text-primary dark:text-primary underline'
-          onPress={onRestore}
-          accessibilityRole='button'
-        >
-          {restoreText}
-        </Text>
+          <Pressable
+            {...pressProps(
+              handlePrimaryPress,
+              primaryAction.disabled || primaryAction.loading
+            )}
+            disabled={primaryAction.disabled || primaryAction.loading}
+            accessibilityRole='button'
+            accessibilityLabel={primaryAction.label}
+            accessibilityState={{
+              disabled: primaryAction.disabled || primaryAction.loading,
+              busy: primaryAction.loading,
+            }}
+            className={cn(
+              'py-3 rounded-lg bg-primary items-center',
+              (primaryAction.disabled || primaryAction.loading) && 'opacity-50'
+            )}
+          >
+            {primaryAction.loading ? (
+              <ActivityIndicator size='small' color='white' />
+            ) : (
+              <Text className='font-semibold text-primary-foreground'>
+                {primaryAction.label}
+              </Text>
+            )}
+          </Pressable>
+        </View>
       )}
-
-      {/* Legal Links */}
-      <View className='flex-row items-center gap-4'>
-        {onTermsPress && (
-          <Text
-            className='text-xs text-muted-foreground underline'
-            onPress={onTermsPress}
-            accessibilityRole='link'
-          >
-            {termsText}
-          </Text>
-        )}
-        {onPrivacyPress && (
-          <Text
-            className='text-xs text-muted-foreground underline'
-            onPress={onPrivacyPress}
-            accessibilityRole='link'
-          >
-            {privacyText}
-          </Text>
-        )}
-      </View>
-
-      {/* Disclaimer */}
-      <Text className='text-xs text-muted-foreground text-center px-4'>
-        Subscriptions will automatically renew unless canceled at least 24 hours
-        before the end of the current period.
-      </Text>
     </View>
   );
 }

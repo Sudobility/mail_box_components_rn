@@ -16,9 +16,10 @@ module.exports = {
     ],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(\\.bun/[^/]+/node_modules/)?(react-native|@react-native|nativewind|react-native-reanimated|clsx|class-variance-authority|@testing-library|@sudobility)/)',
+    '/node_modules/(?!(\\.bun/[^/]+/node_modules/)?(react-native|@react-native|nativewind|react-native-css-interop|react-native-reanimated|clsx|class-variance-authority|@testing-library|@sudobility)/)',
   ],
   moduleNameMapper: {
+    '^@sudobility/components-rn$': '<rootDir>/src/__mocks__/components-rn.cjs',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [

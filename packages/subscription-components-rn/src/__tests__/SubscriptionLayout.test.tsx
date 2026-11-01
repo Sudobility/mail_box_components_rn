@@ -1,21 +1,18 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import {
-  SubscriptionLayout,
-  SubscriptionDivider,
-  SubscriptionFooter,
-} from '../SubscriptionLayout';
+import { SubscriptionLayout } from '../SubscriptionLayout';
 
 describe('SubscriptionLayout', () => {
-  it('renders title and children', () => {
+  it('renders children (title is accepted but not rendered as a heading)', () => {
     render(
       <SubscriptionLayout title='Choose a Plan'>
         <Text>Child content</Text>
       </SubscriptionLayout>
     );
 
-    expect(screen.getByText('Choose a Plan')).toBeTruthy();
+    // The web-mirrored layout does not render the title as a heading.
+    expect(screen.queryByText('Choose a Plan')).toBeNull();
     expect(screen.getByText('Child content')).toBeTruthy();
   });
 
@@ -46,8 +43,8 @@ describe('SubscriptionLayout', () => {
       <SubscriptionLayout
         title='Plans'
         variant='selection'
-        primaryAction={{ label: 'Subscribe Now', onPress: onPrimary }}
-        secondaryAction={{ label: 'Restore', onPress: onSecondary }}
+        primaryAction={{ label: 'Subscribe Now', onClick: onPrimary }}
+        secondaryAction={{ label: 'Restore', onClick: onSecondary }}
       >
         <Text>Content</Text>
       </SubscriptionLayout>
@@ -69,7 +66,7 @@ describe('SubscriptionLayout', () => {
       <SubscriptionLayout
         title='Plans'
         variant='cta'
-        primaryAction={{ label: 'Subscribe Now', onPress: onPrimary }}
+        primaryAction={{ label: 'Subscribe Now', onClick: onPrimary }}
       >
         <Text>Content</Text>
       </SubscriptionLayout>
@@ -147,7 +144,7 @@ describe('SubscriptionLayout', () => {
           title: 'Free',
           price: '$0',
           features: ['Basic access'],
-          ctaButton: { label: 'Get Started', onPress: jest.fn() },
+          ctaButton: { label: 'Get Started', onClick: jest.fn() },
         }}
       >
         <Text>Paid tiles</Text>
@@ -169,15 +166,14 @@ describe('SubscriptionLayout', () => {
           title: 'Free',
           price: '$0',
           features: ['Basic access'],
-          ctaButton: { label: 'Get Started', onPress: jest.fn() },
+          ctaButton: { label: 'Get Started', onClick: jest.fn() },
         }}
       >
         <Text>Paid tiles</Text>
       </SubscriptionLayout>
     );
 
-    // The free tile title won't appear since it's selection variant
-    // However "Plans" title uses Text, so check for the free-specific price
+    // The free tile won't appear since it's selection variant
     expect(screen.queryByText('$0')).toBeNull();
   });
 
@@ -215,7 +211,7 @@ describe('SubscriptionLayout', () => {
       <SubscriptionLayout
         title='Plans'
         variant='selection'
-        primaryAction={{ label: 'Go', onPress: jest.fn() }}
+        primaryAction={{ label: 'Go', onClick: jest.fn() }}
         onTrack={onTrack}
         trackingLabel='sub_layout'
       >
@@ -229,84 +225,5 @@ describe('SubscriptionLayout', () => {
       trackingLabel: 'sub_layout',
       componentName: 'SubscriptionLayout',
     });
-  });
-});
-
-describe('SubscriptionDivider', () => {
-  it('renders without label (simple divider)', () => {
-    const { toJSON } = render(<SubscriptionDivider />);
-    expect(toJSON()).toBeTruthy();
-  });
-
-  it('renders with label text', () => {
-    render(<SubscriptionDivider label='or' />);
-    expect(screen.getByText('or')).toBeTruthy();
-  });
-});
-
-describe('SubscriptionFooter', () => {
-  it('renders default link text', () => {
-    render(
-      <SubscriptionFooter
-        onRestore={jest.fn()}
-        onTermsPress={jest.fn()}
-        onPrivacyPress={jest.fn()}
-      />
-    );
-
-    expect(screen.getByText('Restore Purchases')).toBeTruthy();
-    expect(screen.getByText('Terms of Service')).toBeTruthy();
-    expect(screen.getByText('Privacy Policy')).toBeTruthy();
-  });
-
-  it('renders custom link text', () => {
-    render(
-      <SubscriptionFooter
-        restoreText='Restaurer'
-        termsText='Conditions'
-        privacyText='Confidentialite'
-        onRestore={jest.fn()}
-        onTermsPress={jest.fn()}
-        onPrivacyPress={jest.fn()}
-      />
-    );
-
-    expect(screen.getByText('Restaurer')).toBeTruthy();
-    expect(screen.getByText('Conditions')).toBeTruthy();
-    expect(screen.getByText('Confidentialite')).toBeTruthy();
-  });
-
-  it('calls onRestore when restore is pressed', () => {
-    const onRestore = jest.fn();
-    render(<SubscriptionFooter onRestore={onRestore} />);
-
-    fireEvent.press(screen.getByText('Restore Purchases'));
-    expect(onRestore).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not render restore link when onRestore is not provided', () => {
-    render(<SubscriptionFooter />);
-    expect(screen.queryByText('Restore Purchases')).toBeNull();
-  });
-
-  it('renders disclaimer text', () => {
-    render(<SubscriptionFooter />);
-    expect(
-      screen.getByText(/Subscriptions will automatically renew/)
-    ).toBeTruthy();
-  });
-
-  it('calls onTermsPress and onPrivacyPress', () => {
-    const onTerms = jest.fn();
-    const onPrivacy = jest.fn();
-    render(
-      <SubscriptionFooter onTermsPress={onTerms} onPrivacyPress={onPrivacy} />
-    );
-
-    fireEvent.press(screen.getByText('Terms of Service'));
-    expect(onTerms).toHaveBeenCalledTimes(1);
-
-    fireEvent.press(screen.getByText('Privacy Policy'));
-    expect(onPrivacy).toHaveBeenCalledTimes(1);
   });
 });

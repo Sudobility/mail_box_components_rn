@@ -254,4 +254,62 @@ export function useSubscriptionContext(): SubscriptionContextValue {
 
 export { SubscriptionContext };
 
+interface WebStorageLike {
+  length: number;
+  key(index: number): string | null;
+  removeItem(key: string): void;
+}
+
+/**
+ * Clear RevenueCat Web Billing state from Web Storage, mirroring the web
+ * component. RevenueCat Web Billing (`@revenuecat/purchases-js`) persists
+ * checkout/session state under keys containing `revenuecat` / `rcb` / `rc_`.
+ *
+ * This matters on React Native too: the desktop targets (Windows, and macOS
+ * before native IAP) use the RevenueCat **web** adapter over the app's
+ * `localStorage` polyfill, so clearing those keys (e.g. on sign-out/reset) is
+ * real work. On native iOS/Android there is no such storage, so the guarded
+ * code simply finds nothing to clear.
+ */
+export const clearRevenueCatCheckoutSessions = (): void => {
+  const clearFrom = (storage: WebStorageLike | undefined): void => {
+    if (!storage) return;
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (
+          key &&
+          (key.includes('revenuecat') ||
+            key.includes('rcb') ||
+            key.includes('rc_'))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => storage.removeItem(key));
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  const g = globalThis as unknown as {
+    localStorage?: WebStorageLike;
+    sessionStorage?: WebStorageLike;
+  };
+  clearFrom(g.localStorage);
+  clearFrom(g.sessionStorage);
+};
+
+/**
+ * Close RevenueCat instance and clear sessions (mirrors the web component).
+ */
+export const closeRevenueCatInstance = (): void => {
+  try {
+    clearRevenueCatCheckoutSessions();
+  } catch {
+    // Ignore close errors
+  }
+};
+
 export default SubscriptionProvider;

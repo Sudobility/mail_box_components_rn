@@ -97,8 +97,10 @@ export interface PremiumCalloutConfig {
 export interface CtaButtonConfig {
   /** Button label */
   label: string;
-  /** Press handler */
-  onPress?: () => void;
+  /** Click handler (for button behavior) */
+  onClick?: () => void;
+  /** Link href (for link behavior) — opened via Linking on React Native */
+  href?: string;
 }
 
 /** Tracking data for SubscriptionTile actions */
@@ -169,8 +171,8 @@ export interface SubscriptionStatusConfig {
 export interface ActionButtonConfig {
   /** Button label */
   label: string;
-  /** Press handler */
-  onPress: () => void;
+  /** Click handler */
+  onClick: () => void;
   /** Whether button is disabled */
   disabled?: boolean;
   /** Whether button is in loading state */
