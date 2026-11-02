@@ -1,6 +1,6 @@
 {
   "name": "@sudobility/components-rn",
-  "version": "1.0.137",
+  "version": "1.0.138",
   "description": "React Native UI components and design system - Ported from @sudobility/components",
   "type": "module",
   "main": "dist/index.esm.js",
@@ -330,7 +330,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/fix-esm-imports.mjs",
     "dev": "vite build --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
@@ -356,8 +356,8 @@
     "@react-navigation/native": ">=7.0.0",
     "@react-navigation/native-stack": ">=7.0.0",
     "react-native-screens": ">=4.0.0",
-    "@sudobility/design": "^1.1.66",
-    "@sudobility/types": "^1.9.76",
+    "@sudobility/design": "^1.1.68",
+    "@sudobility/types": "^1.9.78",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "nativewind": ">=4.0.0",
@@ -385,8 +385,8 @@
     "@react-navigation/native": "~7.5.1",
     "@react-navigation/native-stack": "~7.21.0",
     "react-native-screens": "~4.24.0",
-    "@sudobility/design": "^1.1.66",
-    "@sudobility/types": "^1.9.76",
+    "@sudobility/design": "^1.1.68",
+    "@sudobility/types": "^1.9.78",
     "@testing-library/jest-native": "~5.4.3",
     "@testing-library/react-native": "~13.3.3",
     "@types/jest": "~29.5.14",
