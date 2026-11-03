@@ -1,6 +1,6 @@
 {
   "name": "@sudobility/components-rn",
-  "version": "1.0.138",
+  "version": "1.0.139",
   "description": "React Native UI components and design system - Ported from @sudobility/components",
   "type": "module",
   "main": "dist/index.esm.js",
@@ -42,12 +42,6 @@
       "react-native": "./src/analytics/index.ts",
       "import": "./dist/analytics.esm.js",
       "default": "./dist/analytics.esm.js"
-    },
-    "./auth": {
-      "types": "./dist/auth.d.ts",
-      "react-native": "./src/auth/index.ts",
-      "import": "./dist/auth.esm.js",
-      "default": "./dist/auth.esm.js"
     },
     "./automotive": {
       "types": "./dist/automotive.d.ts",
