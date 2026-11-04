@@ -1,6 +1,6 @@
 {
   "name": "@sudobility/components-rn",
-  "version": "1.0.140",
+  "version": "1.0.141",
   "description": "React Native UI components and design system - Ported from @sudobility/components",
   "type": "module",
   "main": "dist/index.esm.js",
@@ -265,6 +265,12 @@
       "import": "./dist/scientific.esm.js",
       "default": "./dist/scientific.esm.js"
     },
+    "./scanner": {
+      "types": "./dist/scanner.d.ts",
+      "react-native": "./src/scanner/index.ts",
+      "import": "./dist/scanner.esm.js",
+      "default": "./dist/scanner.esm.js"
+    },
     "./search": {
       "types": "./dist/search.d.ts",
       "react-native": "./src/search/index.ts",
@@ -365,6 +371,8 @@
     "expo-clipboard": ">=5.0.0"
   },
   "devDependencies": {
+    "react-native-vision-camera": "4.7.3",
+    "react-native-worklets": "~0.7.4",
     "@react-native-community/slider": "~5.2.2",
     "@babel/core": "~7.29.7",
     "@babel/preset-env": "~7.29.7",

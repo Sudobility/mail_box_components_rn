@@ -58,6 +58,8 @@ export default defineConfig({
         'react-native-reanimated',
         'react-native-safe-area-context',
         'react-native-svg',
+        'react-native-vision-camera',
+        'react-native-worklets',
         '@sudobility/design',
         '@sudobility/types',
         'clsx',
