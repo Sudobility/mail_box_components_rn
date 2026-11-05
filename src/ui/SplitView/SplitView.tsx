@@ -35,7 +35,7 @@
  */
 import * as React from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSurfaceInsets } from '../../lib/safe-area-edges';
 import Svg, { Path } from 'react-native-svg';
 import type { Theme } from '@react-navigation/native';
 import { cn } from '../../lib/utils';
@@ -210,7 +210,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   const { isWide } = useMasterDetail();
-  const insets = useSafeAreaInsets();
+  const insets = useSurfaceInsets();
   const capped =
     secondary && detailMaxWidth !== undefined ? (
       <View className='flex-1 items-center'>
@@ -307,19 +307,24 @@ export function SplitMenuList({
   selected,
   onSelect,
 }: SplitMenuListProps) {
-  const insets = useSafeAreaInsets();
+  const insets = useSurfaceInsets();
   const { isWide, showDetail } = useMasterDetail();
   return (
     <FlatList
       className='flex-1 bg-background'
       accessibilityLabel={label}
-      // Beside the detail only the left is cleared (the container widened the
-      // panel for the left notch); drilled in, the list is full width and meets
-      // the right edge too. The bottom clears the tab bar / home indicator.
+      // A vertically-scrollable list: it renders full-bleed and the system
+      // insets its ends past the top bar and the bottom tab bar / home
+      // indicator as a scroll inset (`contentInsetAdjustmentBehavior`), so the
+      // list scrolls edge to edge while its first and last rows stop clear.
+      contentInsetAdjustmentBehavior='automatic'
+      // Horizontally it does not scroll, so its sides are padded by the safe
+      // area (`useSurfaceInsets`, the app's edge rule): the left notch, and the
+      // right only when drilled in full-width — beside the detail its right is
+      // the divider, not a screen edge.
       contentContainerStyle={{
         paddingLeft: insets.left,
         paddingRight: isWide ? 0 : insets.right,
-        paddingBottom: insets.bottom,
       }}
       data={entries}
       // Every entry from the first frame: a menu of a couple of dozen rows at
