@@ -6,6 +6,10 @@ import type { Theme } from '@react-navigation/native';
 import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
+import {
+  createPlatformStackNavigator,
+  type PlatformStackNavigator,
+} from '../../lib/platform-stack';
 
 /**
  * MasterListItem - Standardized list item with selection styling
@@ -173,17 +177,18 @@ type MasterDetailNavigation = NativeStackNavigationProp<MasterDetailParamList>;
  * Only the narrow push, which genuinely needs a navigator, loads one.
  */
 type NativeModule = typeof import('@react-navigation/native');
-type StackModule = typeof import('@react-navigation/native-stack');
 type LazyNav = {
   native: NativeModule;
-  Stack: ReturnType<StackModule['createNativeStackNavigator']>;
+  Stack: PlatformStackNavigator;
 };
 let lazyNav: LazyNav | null = null;
 function loadNav(): LazyNav {
   if (!lazyNav) {
     const native = require('@react-navigation/native') as NativeModule;
-    const stack = require('@react-navigation/native-stack') as StackModule;
-    lazyNav = { native, Stack: stack.createNativeStackNavigator() };
+    // Native stack on a phone / tablet, JS stack on a desktop — though only a
+    // phone/tablet ever drills in (`CAN_DRILL_IN`), so this is the native one in
+    // practice. One wrapper either way (`createPlatformStackNavigator`).
+    lazyNav = { native, Stack: createPlatformStackNavigator() };
   }
   return lazyNav;
 }

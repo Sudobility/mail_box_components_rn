@@ -34,7 +34,7 @@
  * right in a Split View and on macOS alike.
  */
 import * as React from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSurfaceInsets } from '../../lib/safe-area-edges';
 import Svg, { Path } from 'react-native-svg';
 import type { Theme } from '@react-navigation/native';
@@ -44,6 +44,10 @@ import { useIconColor } from '../../lib/icon-color';
 import type { ThemeColorToken } from '../../lib/theme-color';
 import { Text } from '../Text';
 import { MasterDetailLayout, useMasterDetail } from '../MasterDetailLayout';
+import {
+  createPlatformStackNavigator,
+  type PlatformStackNavigator,
+} from '../../lib/platform-stack';
 
 /**
  * The detail's default minimum width, in points. Both columns show only while
@@ -58,6 +62,14 @@ export const SPLIT_DETAIL_MIN_WIDTH = 400;
 
 /** The master column's width beside the detail, in points — `music_app_rn`'s. */
 export const SPLIT_PRIMARY_PANEL_WIDTH = 320;
+
+/**
+ * A desktop renders no panel navigation bar. react-native-macos / windows draw
+ * no stack header, and a bar is for the custom controls a titled panel has none
+ * of — so, as `sudojo_app_rn` does, the detail is headed by a title in its own
+ * content (the web's master/detail) and the list is left to the window's title.
+ */
+const DESKTOP = Platform.OS === 'macos' || Platform.OS === 'windows';
 
 // ---------------------------------------------------------------------------
 // Container
@@ -181,17 +193,17 @@ export function SplitViewContainer({
 // React Navigation, required only when a titled panel actually renders — never
 // at module load — so importing this component pulls in no navigator.
 type NativeModule = typeof import('@react-navigation/native');
-type StackModule = typeof import('@react-navigation/native-stack');
 type LazyNav = {
   native: NativeModule;
-  Stack: ReturnType<StackModule['createNativeStackNavigator']>;
+  Stack: PlatformStackNavigator;
 };
 let lazyNav: LazyNav | null = null;
 function loadNav(): LazyNav {
   if (!lazyNav) {
     const native = require('@react-navigation/native') as NativeModule;
-    const stack = require('@react-navigation/native-stack') as StackModule;
-    lazyNav = { native, Stack: stack.createNativeStackNavigator() };
+    // Native stack on a phone / tablet, JS stack on a desktop whose native
+    // header does not draw — `createPlatformStackNavigator`.
+    lazyNav = { native, Stack: createPlatformStackNavigator() };
   }
   return lazyNav;
 }
@@ -221,6 +233,23 @@ function Panel({
     ) : (
       children
     );
+  if (DESKTOP) {
+    // No navigator bar on a desktop: the detail is headed by a title in its own
+    // content (the web's master/detail); the list is untitled, named by the
+    // window. react-native-macos / windows draw no stack header anyway.
+    return (
+      <View className='min-h-0 flex-1 bg-background'>
+        {secondary && title ? (
+          <View style={styles.desktopTitle}>
+            <Text size='xl' weight='semibold'>
+              {title}
+            </Text>
+          </View>
+        ) : null}
+        {capped}
+      </View>
+    );
+  }
   // The split owns only the detail's side safe area, because only it knows which
   // side is a screen edge and which is the divider: drilled in the detail is
   // full width and clears both notches, while beside the master only its right
@@ -411,6 +440,13 @@ function Chevron({ size, token }: { size: number; token: ThemeColorToken }) {
 }
 
 const styles = StyleSheet.create({
+  // The detail's title on a desktop, where no bar carries it: padded to the
+  // detail's own inset so it lines up with the content below.
+  desktopTitle: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
   // The selection's bar on the left, present and clear when not selected so that
   // choosing an entry does not shift its words.
   entry: {

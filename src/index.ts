@@ -250,6 +250,7 @@ export * from './ui/ScrollSpy';
 // UI Components - Advanced Layout
 export * from './ui/SplitPane';
 export * from './ui/SplitView';
+export * from './ui/TabSidebar';
 export * from './ui/VirtualList';
 
 /**

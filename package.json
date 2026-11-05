@@ -1,6 +1,6 @@
 {
   "name": "@sudobility/components-rn",
-  "version": "1.0.143",
+  "version": "1.0.144",
   "description": "React Native UI components and design system - Ported from @sudobility/components",
   "type": "module",
   "main": "dist/index.esm.js",
@@ -355,6 +355,7 @@
     "@react-native-community/slider": "^4.5.1",
     "@react-navigation/native": ">=7.0.0",
     "@react-navigation/native-stack": ">=7.0.0",
+    "@react-navigation/stack": ">=7.0.0",
     "react-native-screens": ">=4.0.0",
     "@sudobility/design": "^1.1.69",
     "@sudobility/types": "^1.9.78",
@@ -371,9 +372,6 @@
     "expo-clipboard": ">=5.0.0"
   },
   "devDependencies": {
-    "react-native-vision-camera": "4.7.3",
-    "react-native-worklets": "~0.7.4",
-    "@react-native-community/slider": "~5.2.2",
     "@babel/core": "~7.29.7",
     "@babel/preset-env": "~7.29.7",
     "@babel/preset-flow": "~7.29.7",
@@ -381,12 +379,13 @@
     "@babel/preset-typescript": "~7.29.7",
     "@babel/runtime": "~7.29.10",
     "@eslint/js": "~10.0.1",
+    "@react-native-community/slider": "~5.2.2",
     "@react-native/babel-preset": "~0.83.10",
     "@react-native/js-polyfills": "~0.83.10",
     "@react-native/normalize-colors": "~0.83.10",
     "@react-navigation/native": "~7.5.1",
     "@react-navigation/native-stack": "~7.21.0",
-    "react-native-screens": "~4.24.0",
+    "@react-navigation/stack": "~7.12.1",
     "@sudobility/design": "^1.1.69",
     "@sudobility/types": "^1.9.78",
     "@testing-library/jest-native": "~5.4.3",
@@ -405,19 +404,22 @@
     "eslint-plugin-prettier": "~5.5.7",
     "eslint-plugin-react-hooks": "~7.1.1",
     "eslint-plugin-react-refresh": "~0.4.26",
+    "expo-clipboard": "^7.0.0",
     "jest": "~29.7.0",
     "jest-environment-jsdom": "~30.5.2",
     "nativewind": "~4.2.7",
     "prettier": "~3.9.10",
     "react": "~19.3.1",
     "react-native": "~0.83.10",
+    "react-native-screens": "~4.24.0",
+    "react-native-vision-camera": "4.7.3",
+    "react-native-worklets": "~0.7.4",
     "react-test-renderer": "19.3.1",
     "tailwind-merge": "~3.7.0",
     "typescript": "~6.0.3",
     "vite": "~8.3.5",
     "vite-plugin-dts": "~4.5.4",
-    "vitest": "~4.1.12",
-    "expo-clipboard": "^7.0.0"
+    "vitest": "~4.1.12"
   },
   "repository": {
     "type": "git",
@@ -436,6 +438,9 @@
   "license": "BUSL-1.1",
   "peerDependenciesMeta": {
     "expo-clipboard": {
+      "optional": true
+    },
+    "@react-navigation/stack": {
       "optional": true
     }
   }
