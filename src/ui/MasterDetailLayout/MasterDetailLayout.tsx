@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { Theme } from '@react-navigation/native';
 import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
@@ -124,6 +125,20 @@ export interface MasterDetailLayoutProps {
    * so a host that draws its own bar (the common case) does not get a second.
    */
   headerShown?: boolean;
+  /**
+   * The React Navigation theme for the drill-in stack's own container, so the
+   * native header follows the app's colours (its `card` is the bar background,
+   * its `text` the title and back control) rather than the library default's
+   * white. Only used on the narrow drill-in, which is the only place a
+   * navigator exists.
+   */
+  theme?: Theme;
+  /**
+   * How the drill-in header's title sits — `'center'` to match iOS's own
+   * navigation bar, `'left'` for Material's. Native-stack's platform default
+   * when omitted. Only the narrow drill-in has a header to align.
+   */
+  headerTitleAlign?: 'left' | 'center';
 }
 
 interface MasterDetailContextValue {
@@ -185,6 +200,8 @@ export function MasterDetailLayout({
   masterTitle,
   detailTitle,
   headerShown = false,
+  theme,
+  headerTitleAlign,
 }: MasterDetailLayoutProps) {
   const [width, setWidth] = React.useState<number | null>(null);
   const onLayout = React.useCallback((event: LayoutChangeEvent) => {
@@ -204,6 +221,8 @@ export function MasterDetailLayout({
           masterTitle={masterTitle}
           detailTitle={detailTitle}
           headerShown={headerShown}
+          theme={theme}
+          headerTitleAlign={headerTitleAlign}
         />
       )}
     </View>
@@ -243,6 +262,8 @@ function DrillIn({
   masterTitle,
   detailTitle,
   headerShown,
+  theme,
+  headerTitleAlign,
 }: {
   master: React.ReactNode;
   detail: React.ReactNode;
@@ -250,13 +271,15 @@ function DrillIn({
   masterTitle?: string;
   detailTitle?: string;
   headerShown: boolean;
+  theme?: Theme;
+  headerTitleAlign?: 'left' | 'center';
 }) {
   const { native, Stack } = loadNav();
   const { NavigationContainer, NavigationIndependentTree } = native;
   return (
     <NavigationIndependentTree>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown }}>
+      <NavigationContainer theme={theme}>
+        <Stack.Navigator screenOptions={{ headerShown, headerTitleAlign }}>
           <Stack.Screen name='Master' options={{ title: masterTitle ?? '' }}>
             {() => <MasterPane>{master}</MasterPane>}
           </Stack.Screen>
