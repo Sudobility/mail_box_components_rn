@@ -140,6 +140,21 @@ export interface SplitViewContainerProps {
    * current across the remount a collapse-point crossing forces.
    */
   onDetailFocusedChange?: (focused: boolean) => void;
+  /**
+   * Controlled / deep-link mode — forwarded to {@link MasterDetailLayout}. When
+   * set, the host's route owns the selection (so a deep link resolves straight
+   * to the detail) and the layout draws no navigator of its own: wide shows
+   * both columns, narrow shows the master when `'navigation'` and the detail
+   * when `'content'`, keeping the panel chrome and the side safe-area padding
+   * the container's `Panel`s already provide. Pair with `onBackToNavigation`.
+   * Omitted, the container uses its internal drill-in (the previous behaviour).
+   * See {@link MasterDetailLayout}'s `mobileView`.
+   */
+  mobileView?: 'navigation' | 'content';
+  /** Controlled mode: return from the detail to the master (the host clears the route). */
+  onBackToNavigation?: () => void;
+  /** Controlled mode: label on the narrow detail's built-in back control (default the `masterTitle`). */
+  backButtonText?: string;
 }
 
 export function SplitViewContainer({
@@ -154,6 +169,9 @@ export function SplitViewContainer({
   navigationTheme,
   detailFocused,
   onDetailFocusedChange,
+  mobileView,
+  onBackToNavigation,
+  backButtonText,
 }: SplitViewContainerProps) {
   // The whole surface is painted the navigation bar's own colour (the theme's
   // `card`), so the status-bar strip the native header leaves above itself —
@@ -201,6 +219,13 @@ export function SplitViewContainer({
         // only when `collapsible`, since a non-collapsing view never drills in.
         detailFocused={detailFocused}
         onDetailFocusedChange={onDetailFocusedChange}
+        // Controlled / deep-link mode: when the host drives `mobileView` from a
+        // route, the layout skips its own navigator so a deep link resolves to
+        // the detail; the `Panel`s above still provide the chrome and side
+        // safe-area in both columns.
+        mobileView={mobileView}
+        onBackToNavigation={onBackToNavigation}
+        backButtonText={backButtonText}
       />
     </View>
   );

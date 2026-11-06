@@ -3,6 +3,7 @@ import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { InitialState, Theme } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
@@ -329,6 +330,9 @@ function ControlledNarrow({
   onBackToNavigation?: () => void;
   backLabel?: string;
 }) {
+  // The detail here is full-screen with no native header, so the built-in back
+  // control must clear the status bar / notch itself — nothing above it does.
+  const insets = useSafeAreaInsets();
   const value = React.useMemo<MasterDetailContextValue>(
     () => ({
       isWide: false,
@@ -349,7 +353,7 @@ function ControlledNarrow({
               accessibilityLabel={backLabel ?? 'Back'}
               testID='master-detail-back'
               {...pressProps(onBackToNavigation)}
-              style={styles.backControl}
+              style={[styles.backControl, { paddingTop: insets.top + 12 }]}
             >
               <Text className='text-primary text-base font-medium'>
                 {`‹ ${backLabel ?? 'Back'}`}
