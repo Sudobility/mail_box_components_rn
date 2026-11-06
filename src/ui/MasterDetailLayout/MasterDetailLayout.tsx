@@ -169,6 +169,34 @@ export interface MasterDetailLayoutProps {
    * forces. Not called in the two-column layout, which has no drill-in.
    */
   onDetailFocusedChange?: (focused: boolean) => void;
+  /**
+   * Controlled / deep-link mode — the web component's model, for a host whose
+   * own router (React Navigation with a `linking` config, or any route state)
+   * owns which item is selected, so a **deep link into a detail works**. When
+   * set, the layout creates NO navigator of its own: wide shows both columns;
+   * narrow shows the master when `'navigation'` and the detail when `'content'`.
+   * The host derives this from a route — e.g. a screen param the `linking`
+   * config maps — exactly as the web app derives its `mobileView` from the URL,
+   * so RN and web take the same approach. In this mode the master content
+   * navigates (updating that route) on a row press rather than calling
+   * `showDetail()`, and the detail returns through `onBackToNavigation` (which
+   * `useMasterDetail().showMaster()` also calls).
+   *
+   * Omitted, the layout is uncontrolled: it drills in on its own internal
+   * `NavigationIndependentTree` stack — which a deep link cannot reach — the
+   * existing behaviour for self-contained screens, and what `detailFocused`
+   * tunes.
+   */
+  mobileView?: 'navigation' | 'content';
+  /** Controlled mode: return from the detail to the master (the host clears the route). */
+  onBackToNavigation?: () => void;
+  /**
+   * Controlled mode: the label on the narrow detail's built-in back control
+   * (defaults to `masterTitle`, then "Back"). The control is drawn only when
+   * `onBackToNavigation` is given — a host whose detail route has its own
+   * native header omits it and lets that header carry back.
+   */
+  backButtonText?: string;
 }
 
 interface MasterDetailContextValue {
@@ -235,6 +263,9 @@ export function MasterDetailLayout({
   headerTitleAlign,
   detailFocused = false,
   onDetailFocusedChange,
+  mobileView,
+  onBackToNavigation,
+  backButtonText,
 }: MasterDetailLayoutProps) {
   const [width, setWidth] = React.useState<number | null>(null);
   const onLayout = React.useCallback((event: LayoutChangeEvent) => {
@@ -242,10 +273,22 @@ export function MasterDetailLayout({
   }, []);
   // Two columns until measured, and wherever there is room or no way to drill in.
   const twoColumn = !CAN_DRILL_IN || width === null || width >= breakpoint;
+  // Controlled / deep-link mode: the host owns the selection through a route, so
+  // the narrow layout is a plain master-or-detail swap with no navigator of its
+  // own (the web component's model) rather than the internal drill-in stack.
+  const controlled = mobileView !== undefined;
   return (
     <View testID='master-detail' style={styles.fill} onLayout={onLayout}>
       {twoColumn ? (
         <TwoColumn master={master} detail={detail} masterWidth={masterWidth} />
+      ) : controlled ? (
+        <ControlledNarrow
+          master={master}
+          detail={detail}
+          mobileView={mobileView}
+          onBackToNavigation={onBackToNavigation}
+          backLabel={backButtonText ?? masterTitle}
+        />
       ) : (
         <DrillIn
           master={master}
@@ -261,6 +304,62 @@ export function MasterDetailLayout({
         />
       )}
     </View>
+  );
+}
+
+/**
+ * The narrow layout in controlled / deep-link mode: a plain master-or-detail
+ * swap driven by the host's `mobileView`, with no navigator of its own — so a
+ * deep link the host's router resolves lands straight on the detail. Mirrors the
+ * web `MasterDetailLayout`'s mobile behaviour. `useMasterDetail()` still answers
+ * here (`isWide` false, `showMaster` → `onBackToNavigation`), so a detail that
+ * asks the context for its way back keeps working; `showDetail` is inert because
+ * the host's master content navigates the route itself.
+ */
+function ControlledNarrow({
+  master,
+  detail,
+  mobileView,
+  onBackToNavigation,
+  backLabel,
+}: {
+  master: React.ReactNode;
+  detail: React.ReactNode;
+  mobileView: 'navigation' | 'content';
+  onBackToNavigation?: () => void;
+  backLabel?: string;
+}) {
+  const value = React.useMemo<MasterDetailContextValue>(
+    () => ({
+      isWide: false,
+      showDetail: () => {},
+      showMaster: () => onBackToNavigation?.(),
+    }),
+    [onBackToNavigation]
+  );
+  return (
+    <MasterDetailContext.Provider value={value}>
+      {mobileView === 'navigation' ? (
+        master
+      ) : (
+        <View style={styles.fill}>
+          {onBackToNavigation ? (
+            <Pressable
+              accessibilityRole='button'
+              accessibilityLabel={backLabel ?? 'Back'}
+              testID='master-detail-back'
+              {...pressProps(onBackToNavigation)}
+              style={styles.backControl}
+            >
+              <Text className='text-primary text-base font-medium'>
+                {`‹ ${backLabel ?? 'Back'}`}
+              </Text>
+            </Pressable>
+          ) : null}
+          <View style={styles.fill}>{detail}</View>
+        </View>
+      )}
+    </MasterDetailContext.Provider>
   );
 }
 
@@ -408,4 +507,6 @@ const styles = StyleSheet.create({
   row: { flex: 1, flexDirection: 'row' },
   detail: { flex: 1, minWidth: 0 },
   divider: { width: StyleSheet.hairlineWidth },
+  // The controlled narrow detail's built-in back control.
+  backControl: { paddingHorizontal: 16, paddingVertical: 12 },
 });

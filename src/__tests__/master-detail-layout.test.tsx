@@ -106,4 +106,72 @@ describe('MasterDetailLayout', () => {
     fireEvent.press(screen.getByText('detail-body'));
     expect(calls[calls.length - 1]).toBe(false);
   });
+
+  // Controlled / deep-link mode: the host owns the selection via a route, so the
+  // narrow layout is a plain master-or-detail swap with no internal navigator —
+  // the same model as the web component, and reachable by a deep link.
+  describe('controlled (deep-link) mode', () => {
+    it('keeps both columns when wide, whatever mobileView says', () => {
+      render(
+        <MasterDetailLayout
+          master={<Master />}
+          detail={<Detail />}
+          mobileView='navigation'
+        />
+      );
+      layout(1024);
+      expect(screen.getByText('wide')).toBeTruthy();
+      expect(screen.getByText('detail-body')).toBeTruthy();
+    });
+
+    it('shows the master alone when narrow and mobileView is navigation', () => {
+      render(
+        <MasterDetailLayout
+          master={<Master />}
+          detail={<Detail />}
+          mobileView='navigation'
+        />
+      );
+      layout(390);
+      expect(screen.getByText('narrow')).toBeTruthy();
+      expect(screen.queryByText('detail-body')).toBeNull();
+    });
+
+    it('shows the detail when narrow and mobileView is content, with a back control that returns', () => {
+      const calls: string[] = [];
+      render(
+        <MasterDetailLayout
+          master={<Master />}
+          detail={<Detail />}
+          mobileView='content'
+          backButtonText='List'
+          onBackToNavigation={() => calls.push('back')}
+        />
+      );
+      layout(390);
+      // The detail is shown directly — a deep link lands here with no drill-in.
+      expect(screen.getByText('detail-body')).toBeTruthy();
+      expect(screen.queryByText('narrow')).toBeNull();
+      // The built-in back control returns to navigation.
+      fireEvent.press(screen.getByTestId('master-detail-back'));
+      expect(calls).toEqual(['back']);
+    });
+
+    it('routes useMasterDetail().showMaster() to onBackToNavigation in content mode', () => {
+      const calls: string[] = [];
+      render(
+        <MasterDetailLayout
+          master={<Master />}
+          detail={<Detail />}
+          mobileView='content'
+          onBackToNavigation={() => calls.push('back')}
+        />
+      );
+      layout(390);
+      // Detail's own control calls showMaster(), which the controlled layout
+      // routes to onBackToNavigation (the host clears the route).
+      fireEvent.press(screen.getByText('detail-body'));
+      expect(calls).toEqual(['back']);
+    });
+  });
 });
