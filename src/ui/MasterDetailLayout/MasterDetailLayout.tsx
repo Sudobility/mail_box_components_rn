@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { Theme } from '@react-navigation/native';
+import type { InitialState, Theme } from '@react-navigation/native';
 import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
@@ -143,6 +143,32 @@ export interface MasterDetailLayoutProps {
    * when omitted. Only the narrow drill-in has a header to align.
    */
   headerTitleAlign?: 'left' | 'center';
+  /**
+   * Whether the detail is the focused column — controlled, and read only when
+   * the drill-in mounts (the narrow layout). Crossing the breakpoint — a phone
+   * rotated between portrait and landscape, the iPhone Duo folded or unfolded,
+   * an iPad narrowed in Split View — swaps the whole two-column/drill-in
+   * subtree, so the drill-in's navigator is built afresh each time and, left to
+   * itself, always starts on the master. With this `true` it starts on the
+   * detail instead (the master beneath it, so Back still returns to the list),
+   * the way `UISplitViewController` keeps the detail when it collapses: a reader
+   * reading the detail in landscape stays on it after rotating to portrait
+   * rather than being dropped back to the list.
+   *
+   * Omitted, the drill-in always begins on the master — the previous behaviour.
+   * It is controlled because the parent is the only thing that outlives the
+   * remount a breakpoint crossing forces; pair it with `onDetailFocusedChange`
+   * so the parent's copy follows the reader's own drilling in and back, and the
+   * right value is seeded on the next crossing.
+   */
+  detailFocused?: boolean;
+  /**
+   * The focused column changed inside the drill-in: the reader drilled into the
+   * detail (`true`) or returned to the master (`false`). Lets the parent keep
+   * {@link detailFocused} current across the remount a breakpoint crossing
+   * forces. Not called in the two-column layout, which has no drill-in.
+   */
+  onDetailFocusedChange?: (focused: boolean) => void;
 }
 
 interface MasterDetailContextValue {
@@ -207,6 +233,8 @@ export function MasterDetailLayout({
   headerShown = false,
   theme,
   headerTitleAlign,
+  detailFocused = false,
+  onDetailFocusedChange,
 }: MasterDetailLayoutProps) {
   const [width, setWidth] = React.useState<number | null>(null);
   const onLayout = React.useCallback((event: LayoutChangeEvent) => {
@@ -228,6 +256,8 @@ export function MasterDetailLayout({
           headerShown={headerShown}
           theme={theme}
           headerTitleAlign={headerTitleAlign}
+          detailFocused={detailFocused}
+          onDetailFocusedChange={onDetailFocusedChange}
         />
       )}
     </View>
@@ -260,6 +290,18 @@ function TwoColumn({
   );
 }
 
+/**
+ * The drill-in's starting state when the detail is the focused column: the
+ * master in the stack with the detail pushed over it (`index: 1`), so the
+ * layout opens on the detail and Back still returns to the list. Read by
+ * `NavigationContainer` once, when it mounts — which is exactly each time a
+ * breakpoint crossing rebuilds this subtree.
+ */
+const DETAIL_FOCUSED_STATE: InitialState = {
+  index: 1,
+  routes: [{ name: 'Master' }, { name: 'Detail' }],
+};
+
 function DrillIn({
   master,
   detail,
@@ -269,6 +311,8 @@ function DrillIn({
   headerShown,
   theme,
   headerTitleAlign,
+  detailFocused,
+  onDetailFocusedChange,
 }: {
   master: React.ReactNode;
   detail: React.ReactNode;
@@ -278,12 +322,29 @@ function DrillIn({
   headerShown: boolean;
   theme?: Theme;
   headerTitleAlign?: 'left' | 'center';
+  detailFocused: boolean;
+  onDetailFocusedChange?: (focused: boolean) => void;
 }) {
   const { native, Stack } = loadNav();
   const { NavigationContainer, NavigationIndependentTree } = native;
   return (
     <NavigationIndependentTree>
-      <NavigationContainer theme={theme}>
+      <NavigationContainer
+        theme={theme}
+        // Seed the detail on top when the parent says it was the focused column,
+        // so a wide→narrow collapse lands there rather than on the list. Only
+        // read at mount, which is when a breakpoint crossing rebuilds this tree.
+        initialState={detailFocused ? DETAIL_FOCUSED_STATE : undefined}
+        // Report drilling in and back so the parent's `detailFocused` stays
+        // current for the next crossing. `index > 0` means the detail is on top;
+        // it is not called on the initial mount (the parent already knows that
+        // from `detailFocused`), only on a later push or pop.
+        onStateChange={
+          onDetailFocusedChange
+            ? state => onDetailFocusedChange((state?.index ?? 0) > 0)
+            : undefined
+        }
+      >
         <Stack.Navigator screenOptions={{ headerShown, headerTitleAlign }}>
           <Stack.Screen name='Master' options={{ title: masterTitle ?? '' }}>
             {() => <MasterPane>{master}</MasterPane>}

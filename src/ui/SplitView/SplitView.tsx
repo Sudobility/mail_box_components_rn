@@ -123,6 +123,23 @@ export interface SplitViewContainerProps {
    * e.g. a design theme whose nav colour is red.
    */
   navigationTheme?: Theme;
+  /**
+   * Whether the detail is the focused column — controlled, honoured only when
+   * `collapsible` and the view is drilled in. Crossing the collapse point (a
+   * phone rotated between portrait and landscape, the iPhone Duo folded or
+   * unfolded) rebuilds the drill-in, which otherwise always reopens on the
+   * master; with this `true` it reopens on the detail (Back still returns to
+   * the list), so a reader stays on what they were reading across a rotation.
+   * Pair it with {@link onDetailFocusedChange}. Omitted, the drill-in always
+   * reopens on the master. See {@link MasterDetailLayout}'s `detailFocused`.
+   */
+  detailFocused?: boolean;
+  /**
+   * The focused column changed inside a drilled-in view: `true` on a drill into
+   * the detail, `false` on the way back. Lets the host keep `detailFocused`
+   * current across the remount a collapse-point crossing forces.
+   */
+  onDetailFocusedChange?: (focused: boolean) => void;
 }
 
 export function SplitViewContainer({
@@ -135,6 +152,8 @@ export function SplitViewContainer({
   detailMinWidth = SPLIT_DETAIL_MIN_WIDTH,
   detailMaxWidth,
   navigationTheme,
+  detailFocused,
+  onDetailFocusedChange,
 }: SplitViewContainerProps) {
   // The whole surface is painted the navigation bar's own colour (the theme's
   // `card`), so the status-bar strip the native header leaves above itself —
@@ -178,6 +197,10 @@ export function SplitViewContainer({
         masterTitle={masterTitle}
         detailTitle={detailTitle}
         theme={navigationTheme}
+        // Keep the drilled-in reader on their column across a rotation; honoured
+        // only when `collapsible`, since a non-collapsing view never drills in.
+        detailFocused={detailFocused}
+        onDetailFocusedChange={onDetailFocusedChange}
       />
     </View>
   );

@@ -59,4 +59,51 @@ describe('MasterDetailLayout', () => {
     expect(screen.queryByText('detail-body')).toBeNull();
     expect(screen.getByText('narrow')).toBeTruthy();
   });
+
+  it('opens the drill-in on the master by default', () => {
+    render(<MasterDetailLayout master={<Master />} detail={<Detail />} />);
+    layout(390);
+    expect(screen.getByText('narrow')).toBeTruthy();
+    expect(screen.queryByText('detail-body')).toBeNull();
+  });
+
+  it('opens the drill-in on the detail when it was the focused column, Back returning to the master', () => {
+    render(
+      <MasterDetailLayout
+        master={<Master />}
+        detail={<Detail />}
+        detailFocused
+      />
+    );
+    // Collapsing to one column lands on the detail, not the list: the reader
+    // who was reading it in the wide layout stays on it (a rotation to
+    // portrait, the iPhone Duo folded).
+    layout(390);
+    expect(screen.getByText('detail-body')).toBeTruthy();
+    // The master is still beneath it, so Back returns to the list.
+    fireEvent.press(screen.getByText('detail-body'));
+    expect(screen.queryByText('detail-body')).toBeNull();
+    expect(screen.getByText('narrow')).toBeTruthy();
+  });
+
+  it('reports drilling in and back, but not the initial mount', () => {
+    const calls: boolean[] = [];
+    render(
+      <MasterDetailLayout
+        master={<Master />}
+        detail={<Detail />}
+        onDetailFocusedChange={focused => calls.push(focused)}
+      />
+    );
+    layout(390);
+    // The initial mount is not reported — the parent already knows from
+    // `detailFocused` what it seeded.
+    expect(calls).toEqual([]);
+    // A drill-in reports the detail is focused...
+    fireEvent.press(screen.getByText('open'));
+    expect(calls[calls.length - 1]).toBe(true);
+    // ...and the way back reports the master.
+    fireEvent.press(screen.getByText('detail-body'));
+    expect(calls[calls.length - 1]).toBe(false);
+  });
 });
