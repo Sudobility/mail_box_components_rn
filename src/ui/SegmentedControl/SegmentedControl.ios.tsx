@@ -16,7 +16,10 @@ import { View } from 'react-native';
 import { useThemeColor } from '../../lib/theme-color';
 import type { SegmentedControlProps } from './SegmentedControl';
 
-export type { SegmentedOption, SegmentedControlProps } from './SegmentedControl';
+export type {
+  SegmentedOption,
+  SegmentedControlProps,
+} from './SegmentedControl';
 
 export function SegmentedControl({
   label,

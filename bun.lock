@@ -13,6 +13,7 @@
         "@babel/runtime": "~7.29.10",
         "@eslint/js": "~10.0.1",
         "@react-native-community/slider": "~5.2.2",
+        "@react-native-segmented-control/segmented-control": "~2.5.7",
         "@react-native/babel-preset": "~0.83.10",
         "@react-native/js-polyfills": "~0.83.10",
         "@react-native/normalize-colors": "~0.83.10",
@@ -56,6 +57,7 @@
       },
       "peerDependencies": {
         "@react-native-community/slider": "^4.5.1",
+        "@react-native-segmented-control/segmented-control": ">=2.5.0",
         "@react-navigation/native": ">=7.0.0",
         "@react-navigation/native-stack": ">=7.0.0",
         "@react-navigation/stack": ">=7.0.0",
@@ -574,6 +576,8 @@
     "@pkgr/core": ["@pkgr/core@0.3.6", "", {}, "sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA=="],
 
     "@react-native-community/slider": ["@react-native-community/slider@5.2.2", "", {}, "sha512-KdWURcFqHZ/nvQwt9S7P2PHBREl83GZeflWZU1VpR/qJ+lF/mdiOBZshJQztE2hBDgW5iBIrRb3RY9uAie5k/w=="],
+
+    "@react-native-segmented-control/segmented-control": ["@react-native-segmented-control/segmented-control@2.5.7", "", { "peerDependencies": { "react": ">=16.0", "react-native": ">=0.62" } }, "sha512-l84YeVX8xAU3lvOJSvV4nK/NbGhIm2gBfveYolwaoCbRp+/SLXtc6mYrQmM9ScXNwU14mnzjQTpTHWl5YPnkzQ=="],
 
     "@react-native/asset-utils": ["@react-native/asset-utils@0.88.1", "", {}, "sha512-BLb5FF7NgggGYiCsA7KKkK2qFhn0K+6iGXOI+4Ucd+G7Robzw9Gt4WsWwxLt+Od+G+/hyqfz8ASokyWFZ6VcLw=="],
 

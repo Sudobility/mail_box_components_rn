@@ -13,7 +13,10 @@ import { Text } from '../Text';
 import { MIN_TOUCH_TARGET, touchSlop } from '../../lib/touch-target';
 import type { SegmentedControlProps } from './SegmentedControl';
 
-export type { SegmentedOption, SegmentedControlProps } from './SegmentedControl';
+export type {
+  SegmentedOption,
+  SegmentedControlProps,
+} from './SegmentedControl';
 
 /*
   Whole class strings, never a template with a hole in it: Tailwind extracts

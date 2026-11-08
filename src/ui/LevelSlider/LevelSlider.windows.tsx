@@ -42,9 +42,9 @@ function BaseSlider({
 }
 
 export function LevelSlider(props: LevelSliderProps) {
-  return <BaseSlider {...props} thumbStyle="default" />;
+  return <BaseSlider {...props} thumbStyle='default' />;
 }
 
 export function PositionSlider(props: LevelSliderProps) {
-  return <BaseSlider {...props} thumbStyle="fader" />;
+  return <BaseSlider {...props} thumbStyle='fader' />;
 }
