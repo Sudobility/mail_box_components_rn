@@ -103,6 +103,8 @@ export * from './ui/InfoBox';
 
 // UI Components - Feedback
 export * from './ui/Progress';
+export * from './ui/LevelSlider';
+export * from './ui/SegmentedControl';
 export * from './ui/Slider';
 export * from './ui/Modal';
 export * from './ui/FormModal';

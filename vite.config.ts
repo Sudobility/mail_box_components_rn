@@ -52,6 +52,7 @@ export default defineConfig({
         /^react-native-css-interop(\/.*)?$/,
         'react-native',
         '@react-native-community/slider',
+        '@react-native-segmented-control/segmented-control',
         /^@react-navigation\/.*/,
         'react-native-screens',
         'react-native-gesture-handler',
