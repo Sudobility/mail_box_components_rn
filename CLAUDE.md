@@ -1,685 +1,137 @@
-# mail_box_components_rn - AI Development Guide
-
-> **Git policy — never auto-commit or auto-push.** Leave your work in the working tree.
-> Run `git commit`, `git push`, `gh pr create`, or `scripts/push_all.sh` **only when the user
-> explicitly asks in that turn**. Approval for an earlier change does not carry forward, and
-> finishing a task is not permission to commit it.
-
-## Overview
-
-`@sudobility/components-rn` is a React Native UI component library built with TypeScript, Vite, and NativeWind v4. It provides 90+ reusable components ported from `@sudobility/components`, with design tokens and theming imported from `@sudobility/design`. The library follows a monorepo architecture with 10 domain-specific sub-packages under `packages/`.
-
-- **Package name:** `@sudobility/components-rn`
-- **Version:** 1.0.21
-- **License:** BUSL-1.1
-- **Package manager:** Bun (always use `bun` instead of `npm`/`yarn`)
-- **Framework:** React 18/19, React Native >= 0.72, TypeScript 5.6+, NativeWind v4
-- **Module Format:** ES Module + CommonJS
-
-## Project Structure
-
-```
-mail_box_components_rn/
-├── src/
-│   ├── index.ts                  # Main entry point with all exports
-│   ├── lib/
-│   │   └── utils.ts              # cn() utility (clsx wrapper, no tailwind-merge)
-│   ├── nativewind-env.d.ts       # NativeWind TypeScript declarations (className on RN types)
-│   └── ui/                       # 90+ UI component directories
-│       ├── ActionButton/
-│       ├── AddressLink/
-│       ├── Alert/
-│       ├── AnimatedCounter/
-│       ├── AnimatedSection/
-│       ├── AspectFitView/
-│       ├── AspectRatio/
-│       ├── Avatar/
-│       ├── Backdrop/
-│       ├── Badge/
-│       ├── Banner/
-│       ├── Box/
-│       ├── Breadcrumb/
-│       ├── BreadcrumbNav/
-│       ├── Button/            # Includes Button.shared.ts for cross-platform logic
-│       ├── CTASection/
-│       ├── Calendar/
-│       ├── Card/
-│       ├── Center/
-│       ├── ChainBadge.tsx     # Single-file component (no directory)
-│       ├── Checkbox/
-│       ├── Code/
-│       ├── CodeDisplay/
-│       ├── CollapsibleSection/
-│       ├── Combobox/
-│       ├── Command/
-│       ├── Container/
-│       ├── DashboardStatCard/
-│       ├── DataList/
-│       ├── DateInput/
-│       ├── DateTimePicker/
-│       ├── Dialog/
-│       ├── Divider/
-│       ├── Dropdown/
-│       ├── EmptyState/
-│       ├── ExternalLink/
-│       ├── FeatureCard/
-│       ├── FeatureGrid/
-│       ├── FileInput/
-│       ├── Flex/
-│       ├── FloatingPanel/
-│       ├── FormAlerts/
-│       ├── FormattedNumber/
-│       ├── GradientIconContainer/
-│       ├── Grid/
-│       ├── Heading/
-│       ├── HelperText/
-│       ├── IconContainer/
-│       ├── IconText/
-│       ├── InfiniteScroll/
-│       ├── InfoBox/
-│       ├── Input/
-│       ├── Kbd/
-│       ├── KeyValuePair/
-│       ├── Label/
-│       ├── Link/
-│       ├── List/
-│       ├── ListItemWithAction/
-│       ├── LoadingDots/
-│       ├── LoadingOverlay/
-│       ├── Logo/
-│       ├── Masonry/
-│       ├── MasterDetailLayout/
-│       ├── Modal/
-│       ├── MultiSelect/
-│       ├── NavigationList/
-│       ├── NumberInput/
-│       ├── Overlay/
-│       ├── PageContainer/
-│       ├── PageHeader/
-│       ├── PageSectionHeader/
-│       ├── Pagination/
-│       ├── PhoneInput/
-│       ├── Popover/
-│       ├── Progress/
-│       ├── ProgressCircle/
-│       ├── PromotionalBanner/
-│       ├── QuickActions/
-│       ├── ScrollArea/
-│       ├── ScrollSpy/
-│       ├── SearchInput/
-│       ├── SectionBadge/
-│       ├── SectionHeader/
-│       ├── Select/
-│       ├── Separator/
-│       ├── SettingsList/
-│       ├── Sheet/
-│       ├── SideNav/
-│       ├── Skeleton/
-│       ├── SmartLink/
-│       ├── Spacer/
-│       ├── Spinner/
-│       ├── SplitPane/
-│       ├── Stack/
-│       ├── StandardPageLayout/
-│       ├── StatDisplay/
-│       ├── StepList/
-│       ├── Switch/
-│       ├── Table/
-│       ├── Tabs/
-│       ├── Text/
-│       ├── TextArea/
-│       ├── TextInputModal/
-│       ├── TimePicker/
-│       ├── Toast/
-│       ├── Tooltip/
-│       ├── TransferList/
-│       ├── TreeView/
-│       ├── TruncatedText/
-│       ├── VirtualList/
-│       └── VisuallyHidden/
-├── packages/                     # Domain-specific sub-packages
-│   ├── analytics-components-rn/  # Analytics (stub, components TBD)
-│   ├── auth-components-rn/       # Authentication (AuthProvider, AuthScreen, etc.)
-│   ├── devops-components-rn/     # DevOps (SystemStatusIndicator, BuildLog, etc.)
-│   ├── email-components-rn/      # Email (ContactCard, EmailAccountsList, etc.)
-│   ├── entity-components-rn/     # Entity/Org (EntityCard, MemberList, etc.)
-│   ├── marketing-components-rn/  # Marketing (WelcomeScreen, FeatureListItem, etc.)
-│   ├── ratelimit-components-rn/  # Rate limiting (UsageDashboard, TierComparison)
-│   ├── social-components-rn/     # Social (RatingStars, ShareButtons)
-│   ├── subscription-components-rn/ # Subscriptions (SubscriptionTile, PeriodSelector)
-│   └── web3-components-rn/       # Web3 (WalletIcon, AddressLabel, TokenSwap, etc.)
-├── dist/                         # Build output
-├── eslint.config.js              # ESLint flat config
-├── .prettierrc                   # Prettier config
-├── tailwind.config.js            # NativeWind/Tailwind config
-├── tsconfig.json                 # TypeScript config (strict mode)
-├── vite.config.ts                # Vite library build config
-├── jest.config.cjs               # Jest test config
-└── package.json                  # Root package with workspaces
-```
-
-## Component Categories
-
-### Core UI (`src/ui/`)
-
-| Category | Components |
-|----------|-----------|
-| **Core** | Button, Card (CardHeader, CardContent, CardFooter), Input, Spinner, Alert (AlertTitle, AlertDescription), ActionButton, Banner |
-| **Layout** | Box, Flex, Stack, Divider, Separator, Container, Center, Spacer, Grid, MasterDetailLayout (MasterListItem), SplitPane, PageContainer, FloatingPanel, StandardPageLayout, Masonry |
-| **Form** | Label, TextArea, Checkbox, Switch, HelperText, Select, SearchInput, NumberInput, PhoneInput, TimePicker, Combobox, DateInput, DateTimePicker, FileInput, MultiSelect |
-| **Typography** | Text, Heading, Code, TruncatedText, CodeDisplay |
-| **Display** | Badge, Avatar, Skeleton, List, IconText, FormattedNumber, InfoBox, Kbd, KeyValuePair, StatDisplay, DashboardStatCard, Table, DataList |
-| **Feedback** | Progress, ProgressCircle, Modal (ModalHeader, ModalContent, ModalFooter), Toast (ToastProvider, useToast), LoadingOverlay, LoadingDots, Backdrop, FormAlerts |
-| **Overlay** | Sheet, Tooltip, Dialog, Popover, Overlay, TextInputModal |
-| **Navigation** | Tabs (TabsList, TabsTrigger, TabsContent), Link, Breadcrumb, BreadcrumbNav, Pagination, SettingsList, NavigationList, SideNav, SmartLink, ScrollSpy |
-| **Patterns** | Dropdown, AspectRatio, AspectFitView, QuickActions, EmptyState, CollapsibleSection |
-| **Badges & Labels** | SectionBadge, ChainBadge |
-| **Animation** | AnimatedCounter, AnimatedSection |
-| **Icons** | IconContainer, GradientIconContainer |
-| **Headers** | PageHeader, PageSectionHeader, SectionHeader |
-| **Accessibility** | VisuallyHidden |
-| **Advanced** | InfiniteScroll, ExternalLink, ScrollArea, TransferList, ListItemWithAction, VirtualList, Command, TreeView, AddressLink |
-| **Features/Marketing** | FeatureCard, FeatureGrid, CTASection, PromotionalBanner |
-| **Branding** | Logo |
-| **Layout (Page-Level)** | MasterDetailLayout, PageHeader, StandardPageLayout, StepList |
-
-### Specialized Packages (`packages/`)
-
-| Package | Key Exports |
-|---------|------------|
-| **`@sudobility/auth-components-rn`** | AuthProvider, useAuthStatus, AuthScreen, AuthInline, AuthAction, Avatar, ProviderButtons, EmailSignInForm, EmailSignUpForm, ForgotPasswordForm |
-| **`@sudobility/email-components-rn`** | AbTestEmail, ContactCard, EmailAccountsList, EmailAnalytics, EmailCampaign, EmailInputGroup, EmailTemplate, FreeEmailBanner, SubscriberList, SubscriptionPlan |
-| **`@sudobility/web3-components-rn`** | AddressLabel, CryptoPortfolio, GasTracker, NftGallery, TokenSwap, WalletConnect, WalletIcon, WalletSelectionButton, WalletSelectionGrid, WalletTab |
-| **`@sudobility/devops-components-rn`** | SystemStatusIndicator, DeploymentStatus, BuildLog, MetricsGrid, AuditLog, PipelineView |
-| **`@sudobility/marketing-components-rn`** | CrmDashboard, CtaBanner, FeatureListItem, FeatureSpotlight, HeroBannerWithBadge, InternalLink, TopicClusterLinks, RelatedLinks, NpsSurvey, SalesReport, TestimonialSlider, UseCaseGrid, WelcomeScreen |
-| **`@sudobility/entity-components-rn`** | EntityCard, EntityList, EntitySelector, MemberList, MemberRoleSelector, InvitationForm, InvitationList |
-| **`@sudobility/subscription-components-rn`** | SubscriptionProvider, useSubscription, useIsSubscribed, SubscriptionTile, SubscriptionLayout, SegmentedControl, PeriodSelector |
-| **`@sudobility/ratelimit-components-rn`** | UsageDashboard, TierComparisonTable, UsageHistoryChart |
-| **`@sudobility/social-components-rn`** | RatingStars, ShareButtons |
-| **`@sudobility/analytics-components-rn`** | Stub package (cn utility only, components TBD) |
-
-## Development Commands
-
-```bash
-# Install dependencies
-bun install
-
-# Build the library (TypeScript compilation + Vite bundling)
-bun run build
-
-# Build all packages (root + specialized packages)
-bun run build:all
-
-# Build specialized packages only
-bun run build:packages
-
-# Development mode with watch
-bun run dev
-
-# Type checking without emitting files
-bun run type-check
-
-# Linting (ESLint flat config with TypeScript + Prettier rules)
-bun run lint
-
-# Format code (Prettier)
-bun run format
-
-# Check formatting
-bun run format:check
-
-# Run tests (Jest with react-native preset)
-bun run test
-
-# Run tests in watch mode
-bun run test:watch
-
-# Run tests with coverage
-bun run test:coverage
-
-# Package preparation (builds before publish)
-bun run prepublishOnly
-```
-
-## Architecture / Patterns
-
-### Design System Integration
-
-Design tokens are imported from `@sudobility/design` and re-exported from the root `src/index.ts`:
-
-```typescript
-import { variants, textVariants, designTokens, colors } from '@sudobility/design';
-```
-
-- **`variants`** -- Component style variant functions (e.g., `v.button.primary.default()`, `v.input.default()`, `v.alert.success()`)
-- **`textVariants`** -- Typography system (e.g., `textVariants.heading.h4()`, `textVariants.body.sm()`)
-- **`designTokens`** -- Spacing, typography, and animation tokens (4px grid)
-- **`colors`** -- Semantic color palette with dark mode support
-
-### Component File Convention
-
-Each component lives in its own directory under `src/ui/`:
-
-```
-src/ui/ComponentName/
-  ├── ComponentName.tsx    # Main component implementation
-  └── index.ts             # Barrel export
-```
-
-Exception: `ChainBadge.tsx` is a single-file component directly in `src/ui/`.
-
-Some components have additional shared logic files (e.g., `Button/Button.shared.ts` for cross-platform button logic).
-
-### Styling Strategy
-
-1. **`cn()` utility** (`src/lib/utils.ts`) -- Wraps `clsx` for conditional class merging. Unlike the web version, does not use `tailwind-merge` since NativeWind processes classes at build time.
-
-2. **NativeWind v4** -- Tailwind CSS classes applied via `className` prop on React Native components. The `nativewind-env.d.ts` file augments RN types to accept `className` on View, Text, Pressable, TextInput, FlatList, SectionList, ActivityIndicator, Switch, SafeAreaView, KeyboardAvoidingView, Modal, and more.
-
-3. **Variant maps** -- Most components define variant/size/color classes as plain objects within the component file:
-   ```typescript
-   const variantClasses = {
-     default: 'bg-gray-100 dark:bg-gray-700',
-     primary: 'bg-blue-100 dark:bg-blue-900/30',
-     success: 'bg-green-100 dark:bg-green-900/30',
-   };
-   ```
-
-4. **Design system variants** -- Some core components (Button, Input, Alert, Card) call variant functions from `@sudobility/design` directly:
-   ```typescript
-   import { variants as v } from '@sudobility/design';
-   // Usage: v.input.default(), v.button.primary.default()
-   ```
-
-5. **Dark mode** -- Supported universally via Tailwind `dark:` prefix classes.
-
-### Props Conventions
-
-- All components accept `className?: string` for custom styling override
-- Components extend appropriate RN base types (e.g., `ViewProps`, `TextInputProps`)
-- Common prop patterns:
-  - `variant` -- Visual style variant (e.g., `'default' | 'primary' | 'success'`)
-  - `size` -- Size variant (e.g., `'sm' | 'md' | 'lg'`)
-  - `disabled` / `loading` -- State flags
-  - `onPress` -- Press handler (not `onClick`)
-  - `children` -- Content
-- Props interfaces are exported alongside components (e.g., `CardProps`, `ButtonProps`)
-
-### Accessibility
-
-- Components use RN accessibility props: `accessibilityRole`, `accessibilityLabel`, `accessibilityState`
-- Interactive elements use `Pressable` (not `TouchableOpacity`) for accessibility
-- The `VisuallyHidden` component is available for screen-reader-only content
-
-**A touchable wires `onPress` and `onAccessibilityTap`, always — spread
-`pressProps` from `lib/a11y` rather than writing `onPress` yourself.** On
-react-native-macos an assistive activation (VoiceOver's Control-Option-Space,
-Switch Control, Voice Control) arrives as **`onAccessibilityTap`** and *not* as
-`onPress`: there is no synthesized touch behind it. iOS VoiceOver happens to
-fall back to a synthesized press when the prop is absent, which is why the gap
-is invisible until somebody runs the app on a Mac — and there the control
-announces itself, takes focus, and then does nothing at all when activated. It
-was found that way, in a consumer's instrument, clef and track pickers, after
-207 touchables across this repo had shipped with `onPress` alone — 129 here and
-78 in `packages/` — and `Button` was the only one that had it.
-`pressProps(handler, disabled)` returns the pair from
-**one** handler, which is the point: written as two props they are two copies of
-the same expression, and the day one is edited is the day macOS stops matching
-the mouse. It withholds the tap when `disabled`, because `disabled` on the
-touchable suppresses `onPress` and suppresses nothing else — a disabled control
-would otherwise stay operable by assistive technology. Whatever guards the
-pointer must therefore guard the tap: `accessibilityState` has to report
-`disabled`/`selected`/`checked` too, or the control announces itself as
-available while it is not.
-
-`src/__tests__/accessibility-tap-guard.test.ts` fails on any touchable carrying
-`onPress` without `onAccessibilityTap`. The only way past it is a
-`/* no-a11y-tap: <reason> */` comment **inside that tag**, which seven modal
-panels use — five here, two in `entity-components-rn` — because they swallow a
-press so it does not reach the scrim behind them, and that needs the gesture an
-assistive activation does not have. A bare `no-a11y-tap` with no reason is not
-an exemption.
-
-**The rule and the guard cover `packages/*` too.** Every sibling package has the
-same guard under its own `src/__tests__/`, all of them calling
-`scanTouchables` from **`jest.touchable-scan.cjs` at the repo root** — one
-scanner, because a check against a repeated mistake that is itself repeated ten
-times drifts like everything else. The eight packages that already depend on
-`@sudobility/components-rn` import `pressProps` from it, which is why it is part
-of that package's public API; `social-components-rn` depends on React Native and
-`clsx` alone and keeps a documented **copy** in `src/a11y.ts` rather than taking
-a component library as a dependency for four lines.
-`analytics-components-rn` is still a placeholder with no components, so its
-guard pins no count — it is there for the first touchable somebody adds.
-
-**The scanner parses; it does not pattern-match, and that is not fussiness.**
-The first version blanked comments and string literals with a hand-written
-scanner so a `<Pressable onPress>` inside a JSDoc `@example` would not be read
-as a real one — then took the apostrophe in JSX text ("we'll send you a link")
-for the start of a string literal and blanked the **rest of the file**, hiding
-two genuinely broken touchables in `auth-components-rn/ForgotPasswordForm.tsx`.
-A guard that silently stops looking is worse than no guard.
-
-### Colours follow the host's theme
-
-**Every colour is a semantic token, and a class wherever NativeWind can carry
-it** — because a class resolves against whatever the host applied, including
-CSS variables it sets at run time with `vars()`. That is how a host such as
-Moosiac lets its reader choose Dark on a light-OS device; anything read from the
-OS appearance (`useColorScheme()`) or from `colors.raw` gets that case wrong.
-Props that look as if they need a string often take a class:
-`ActivityIndicator` (`className='text-primary'` → `color`), `TextInput`
-(`placeholder:text-muted-foreground` → `placeholderTextColor`; skip the class
-when the caller passes `placeholderTextColor`, so theirs wins), and an `Svg`
-created in this package's JSX (`lib/svg-interop` registers it;
-`className='text-muted-foreground'` → `color`, paths `fill='currentColor'`).
-What cannot take a class (a `Switch`'s `trackColor`, an icon's `color`) uses
-`useThemeColor` from `lib/theme-color`, which reads the host's runtime
-variable first and falls back to the configured theme, then to the caller's
-fallback. React Native `Text` inherits no colour, so a `text-*` class on a
-`View` colours nothing — put it on the `Text`. An `icon` slot is given its
-colour through `resolveIconColor` (`lib/icon-color`): a lone element with no
-`color` of its own is cloned with the slot's resolved colour. Design-system
-class strings (`colors.component.*`) are read at render or cached per theme
-with `themeCached` (`lib/theme-cache`), never at module load.
-`src/__tests__/theme-color-scan.test.ts` refuses `colors.raw`, hex literals,
-palette classes (`text-white`, `bg-blue-500`) and `color=` on an
-`ActivityIndicator` in `src/ui`, with an allow list that gives a reason per
-entry; translucent `bg-black/NN` scrims are the one blanket exception.
-
-### Layout and safe areas
-
-**Every full-screen or edge-anchored surface pads for all four insets — spread
-`safeAreaPadding(insets, edges?)` from `lib/safe-area` rather than adding
-paddings by hand.** The mistake this exists to prevent is always the same shape:
-`insets.top` and `insets.bottom` applied and `insets.left`/`insets.right`
-forgotten. It is invisible on the device most work is done on, because a
-portrait phone reports both horizontal insets as **0** — so the surface looks
-finished on every simulator anybody opens by habit, and every test passes. A
-**landscape** phone with a display cutout is where they are non-zero, and there
-the camera housing takes a whole column down one side: 159px on the Android
-phone this was measured on. `FormModal` shipped with exactly that omission and
-put its Close button at `[12,167][156,311]` — entirely inside the cutout, so the
-dialog could not be dismissed at all — while its body text started at x=45,
-underneath the housing. `BottomActionBar`, `PopupSelect`, `Sheet` (which had no
-safe-area handling whatever), `Dialog`, `Modal` and `Overlay` all had a version
-of it. Three sub-rules, each learned from one of those:
-
-- **Padding, not margin**, and applied *inside* the surface: the background
-  still reaches the physical edge, so a modal does not show the app through a
-  gap where the cutout is, and only the content moves in.
-- **A centred card is centred in the safe area, not in the screen** — pad the
-  centring container, whose own background is the scrim, and the scrim still
-  covers the whole window. Cap the card's width by the safe width too
-  (`width - insets.left - insets.right`), or a `large`/`xl` size overflows the
-  container it was just told to fit inside.
-- **`edges` is for a surface that genuinely touches only some of them.** A
-  bottom sheet takes bottom/left/right; padding its top pushes the drag handle
-  off the rounded corner it is drawn against. `SHEET_EDGES` in `Sheet.tsx` is
-  that table, and both horizontal edges are on every entry.
-
-`SafeAreaView` from `react-native-safe-area-context` applies all four by
-default, so the components using it (`PageContainer`, `Toast`, `Select`,
-`CheckableSelect`, `SheetSelector`, `LanguageSelectorModal`) are already
-correct — **do not narrow one with an `edges` prop** without the same reasoning.
-`src/__tests__/safe-area-insets.test.tsx` pins the rule against asymmetric
-insets (159 left, 0 right), because a symmetric fixture passes against code that
-reads `insets.left` for both sides.
-
-**A picker trigger's label is `selectTriggerLabelStyle` from
-`lib/select-trigger`, never `flex: 1`.** React Native expands `flex: 1` to
-`flexGrow: 1, flexShrink: 1, flexBasis: 0`, and a flex-basis of **zero is a
-claim that the text needs no width**. In a parent that has a width that is
-harmless. In a parent whose width comes from *its own content* — a toolbar row,
-a settings row beside its label, anything not stretched — there is nothing left
-over, because the row asked its children how wide they were and the label
-answered zero: the trigger measures as padding plus chevron and renders as a
-bare chevron with the value invisible. All three numbers are load-bearing and
-each is satisfiable by a fix that breaks another: `flexBasis: 'auto'` restores
-the intrinsic width, `flexGrow: 1` keeps the trigger filling a parent that *does*
-give it one, and `flexShrink: 1` beside `numberOfLines={1}` is what truncates
-with an ellipsis instead of pushing the chevron off the end. A consumer worked
-around this with three hardcoded widths before it was found here, which is the
-signal that a layout workaround repeated in an app belongs in the library.
-
-### Text inputs
-
-**Every `TextInput` this repo renders spreads `textInputDefaults` from
-`lib/text-input`, or takes the value through an explicit prop.** It carries one
-thing: `disableFullscreenUI: true`. When a phone is short of vertical room —
-which in practice means **landscape, on every phone** — Android may stop editing
-in place and replace the whole app with a full-screen text editor and a DONE
-button (`flagNoExtractUi` is what turns it off). For a login form that is
-defensible; for anything whose design is that you watch something *while* you
-type it, it is fatal.
-
-It needs **no platform branch**, in the code or in the types: the prop is
-declared on the shared `TextInputProps` and forwarded to a native view only from
-`TextInput`'s Android branch, so elsewhere it is a prop nothing reads. That is
-asserted against React Native's own source in
-`src/__tests__/text-input-defaults.test.tsx` rather than taken on trust.
-
-**Spread it _before_ a caller's props, never after** — it is a default, and a
-component taking `TextInputProps` must let a caller ask for the platform editor
-back. A component that takes no props spread (`NumberInput`, `PhoneInput`,
-`TextInputModal`) declares `disableFullscreenUI?: boolean` of its own, defaulted
-from `textInputDefaults`, so the escape hatch exists everywhere. A purely
-internal field — the search box inside `Combobox`, `Command`, `MultiSelect`,
-`TransferList` — just spreads the defaults, since those expose no text-input API
-at all. A source-scanning test fails on any `<TextInput>` in `src/ui` carrying
-neither, so a field added next month is caught by existing code. The sibling
-packages under `packages/` write the prop literally rather than importing the
-constant: they resolve `@sudobility/components-rn` from npm, so a fresh export
-is not available to them until the root package republishes.
-
-### React Native Adaptations (from web)
-
-| Web | React Native |
-|-----|-------------|
-| `<div>` | `<View>` |
-| `<button>` | `<Pressable>` |
-| `<span>`, `<p>` | `<Text>` |
-| `<input>` | `<TextInput>` |
-| `onClick` | `onPress` |
-| ARIA attributes | `accessibilityRole`, `accessibilityLabel`, `accessibilityState` |
-| CSS animations | `Animated` API or `react-native-reanimated` |
-| `<select>` | Custom `Select` component with `Modal` + `FlatList` |
-
-### Compound Components
-
-Several components use the compound component pattern with React Context:
-
-- **Tabs**: `Tabs` > `TabsList` > `TabsTrigger` + `TabsContent` (uses `TabsContext`)
-- **Toast**: `ToastProvider` wraps app, `useToast()` hook exposes `addToast`/`removeToast`
-- **Card**: `Card` > `CardHeader` + `CardContent` + `CardFooter`
-- **Modal**: `Modal` > `ModalHeader` + `ModalContent` + `ModalFooter`
-
-### Controlled/Uncontrolled Pattern
-
-Components like `Tabs` support both controlled (`value` + `onValueChange`) and uncontrolled (`defaultValue`) modes.
-
-### Animation
-
-- `Animated` API from `react-native` for basic animations (Sheet slide, Dialog scale, Toast enter, Progress indeterminate)
-- `PanResponder` for gesture support (Sheet drag-to-dismiss)
-- `react-native-reanimated` listed as peer dependency for advanced animation needs
-
-### Build Configuration
-
-- **Vite** -- Library mode bundling with ES and CJS output formats
-- **TypeScript** -- Strict mode, ES2020 target, bundler module resolution, declaration files with source maps
-- **Path alias** -- `@/` maps to `src/`
-- **Externals** -- React, React Native, NativeWind, `@sudobility/design`, clsx, CVA are all externalized
-- **Metro resolution** -- `"react-native"` field in package.json points to `src/index.ts` for Metro bundler
-- **Source maps** -- Enabled (`sourcemap: true`)
-- **Minification** -- Disabled (`minify: false`) for library consumers to optimize themselves
-
-### Build Output
-
-```
-dist/
-  ├── index.esm.js          # ES module build
-  ├── index.cjs.js           # CommonJS build
-  ├── index.d.ts             # TypeScript declarations
-  └── ...                    # Source maps + declaration maps
-```
-
-### Code Style
-
-- **Prettier**: Single quotes, JSX single quotes, 2-space tabs, semicolons, trailing commas (ES5), 80 char print width, no arrow parens for single args
-- **ESLint**: Flat config with TypeScript strict rules, React Hooks rules, Prettier integration
-- **Naming**: PascalCase for components, camelCase for hooks/utils, kebab-case for package names
-- **Unused vars**: Prefix with `_` to suppress errors (e.g., `_animated`)
-
-## Common Tasks
-
-### Adding a New Core Component
-
-1. Create directory: `src/ui/MyComponent/`
-2. Create component file `src/ui/MyComponent/MyComponent.tsx`:
-   ```typescript
-   import * as React from 'react';
-   import { View, Text } from 'react-native';
-   import { cn } from '../../lib/utils';
-
-   export interface MyComponentProps {
-     variant?: 'default' | 'primary';
-     size?: 'sm' | 'md' | 'lg';
-     className?: string;
-     children: React.ReactNode;
-   }
-
-   export const MyComponent: React.FC<MyComponentProps> = ({
-     variant = 'default',
-     size = 'md',
-     className,
-     children,
-   }) => {
-     return (
-       <View
-         className={cn('rounded-lg p-4', className)}
-         accessibilityRole='summary'
-       >
-         {children}
-       </View>
-     );
-   };
-   ```
-3. Create barrel file `src/ui/MyComponent/index.ts`:
-   ```typescript
-   export { MyComponent, type MyComponentProps } from './MyComponent';
-   ```
-4. Add export to `src/index.ts`:
-   ```typescript
-   export * from './ui/MyComponent';
-   ```
-5. Run `bun run type-check` and `bun run lint` to verify.
-
-### Working with Design System Variants
-
-```typescript
-import { variants as v, textVariants } from '@sudobility/design';
-
-// Button variant
-const buttonClass = v.button.primary.default();
-
-// Text variant
-const headingClass = textVariants.heading.h4();
-
-// Card variant colors
-import { getCardVariantColors } from '@sudobility/design';
-const cardClass = getCardVariantColors('elevated');
-```
-
-### Porting a Component from Web (`@sudobility/components`)
-
-1. Replace HTML elements with RN equivalents (div -> View, button -> Pressable, span -> Text)
-2. Convert `onClick` to `onPress`
-3. Replace ARIA attributes with RN accessibility props
-4. Use NativeWind classes (most Tailwind classes work directly)
-5. For `<select>`, implement as Modal + FlatList pattern (see `Select.tsx`)
-6. For animations, use RN `Animated` API instead of CSS transitions
-7. Test on both iOS and Android
-
-## Peer / Key Dependencies
-
-### Peer Dependencies (required by consumers)
-
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `@sudobility/design` | ^1.1.19 | Design tokens, colors, typography, variants |
-| `@sudobility/types` | ^1.9.53 | Shared TypeScript types |
-| `react` | ^18.0.0 or ^19.0.0 | React framework |
-| `react-native` | >=0.72.0 | React Native runtime |
-| `nativewind` | >=4.0.0 | Tailwind CSS for React Native |
-| `react-native-gesture-handler` | >=2.0.0 | Gesture handling |
-| `react-native-reanimated` | >=3.0.0 | Advanced animations |
-| `react-native-safe-area-context` | >=4.0.0 | Safe area insets |
-| `react-native-svg` | >=13.0.0 | SVG support |
-| `class-variance-authority` | ^0.7.0 | Component variant management |
-| `clsx` | ^2.0.0 | Conditional class merging |
-
-### Dev Dependencies (key)
-
-| Dependency | Purpose |
-|-----------|---------|
-| `typescript` ^5.6.0 | TypeScript compiler |
-| `vite` ^6.0.0 | Library bundler |
-| `vite-plugin-dts` ^4.3.0 | Declaration file generation |
-| `eslint` ^9.15.0 | Linting (flat config) |
-| `prettier` ^3.4.0 | Code formatting |
-| `jest` ^29.7.0 | Testing framework |
-| `@testing-library/react-native` ^13.3.3 | Component testing |
-
-### Sub-Package Peer Dependencies
-
-Each specialized package (`packages/*`) requires:
-- `@sudobility/components-rn` ^1.0.0
-- `@sudobility/design` ^1.1.0
-- `react` ^18.0.0 or ^19.0.0
-- `react-native` >=0.72.0
-
-## Git Workflow
-
-- Do not use feature branches for code changes. Always stay on the current branch.
-
-## Screen rendering — safe area & scroll insets
-
-Honour the device safe area on **every** screen. Always use `useSafeAreaInsets()`
-from `react-native-safe-area-context` (or a `SafeAreaView` with explicit `edges`)
-and pad by the actual inset value. **Never hard-code a padding/margin in place of
-an inset** — a magic number like `paddingBottom: 80` happens to clear today's
-phone and is wrong on the next one.
-
-Decide per axis, by whether that axis scrolls:
-
-**Vertical:**
-- **NOT vertically scrollable** (a fixed screen, a pinned footer/CTA, a camera
-  overlay): the content area must stop at the **top and bottom** safe-area insets
-  — pad top by `insets.top`, bottom by `insets.bottom`. It must not reach the
-  physical top/bottom edge (status bar / notch / home indicator).
-- **Vertically scrollable**: let the scroll view render **full-bleed** to the top
-  and bottom edges, and give it top/bottom **scroll insets** equal to the safe
-  area (`contentInset` + `scrollIndicatorInsets`, or
-  `contentInsetAdjustmentBehavior="automatic"`). Content then starts/ends clear of
-  the unsafe regions while still scrolling edge-to-edge behind them.
-
-**Horizontal** (landscape, display cutout, rounded corners):
-- **NOT horizontally scrollable**: pad left/right by `insets.left` / `insets.right`.
-- **Horizontally scrollable**: render to the left/right edges and give it
-  left/right scroll insets.
-
-**Bottom CTAs under a tab bar — the trap that burns everyone:** inside a tab
-navigator, the bottom safe-area inset (`insets.bottom`, and what a shared
-`BottomActionBar` reads) **already includes the tab-bar height**. So a pinned
-bottom bar padded by `insets.bottom` already lands above the tab bar. Therefore:
-- DO pad the bottom bar by `insets.bottom` and nothing more.
-- DON'T add the tab-bar height on top of the inset, and DON'T reserve it again on
-  the screen root — that double-counts and floats the CTA too high.
-- DON'T pass a `tabBarHeight` (or similar) that makes the bar swap the inset for a
-  flat fixed gap — that ignores the inset and drops the CTA under the tab bar.
-
-Canonical fixed-screen shape: a flex-column root → the content/scroll region →
-a bottom action bar as the **last child** that pads by `insets.bottom` with no
-manual tab-bar math. Copy a screen already doing this correctly (e.g. a Settings
-screen with a Sign-Out button) rather than re-deriving the padding.
+# mail_box_components_rn (`@sudobility/components-rn`)
+
+> **Git policy — never auto-commit or auto-push.** Leave your work in the
+> working tree. Run `git commit`, `git push`, `gh pr create` or
+> `scripts/push_all.sh` **only when the user explicitly asks in that turn.**
+> Stay on the current branch; do not open feature branches.
+
+The React Native port of the web `@sudobility/components` library — 90+ UI
+primitives under `src/ui/`, with design tokens, colors, typography and variant
+functions imported from `@sudobility/design`. Built with TypeScript, Vite
+(library mode) and NativeWind v4; ships ESM + CJS. BUSL-1.1. Always use `bun`.
+
+**Domain bundles live under `src/<domain>/`** (email, web3, devops, entity,
+marketing, subscription, ratelimit, social, finance, … 40-odd) and are
+published as subpath exports — `@sudobility/components-rn/email`,
+`/web3`, etc., each resolving to `src/<domain>/index.ts`. Core UI is the root
+export (`src/index.ts`). This is one library, not a monorepo of sub-packages.
+
+## Commands
+
+- `bun install`
+- `bun run build` — `tsc` + `vite build` + `scripts/fix-esm-imports.mjs`
+- `bun run type-check` — `tsc --noEmit`
+- `bun run lint` — eslint, `--max-warnings 0`
+- `bun run format` / `format:check` — prettier
+- `bun run test:unit` — jest (react-native preset); `test:watch`, `test:coverage`
+- `bun run dev` — vite watch
+
+## Boundaries
+
+- **Types and vocabulary are `@sudobility/types`; design tokens are
+  `@sudobility/design`** (`variants`/`v`, `textVariants`, `designTokens`,
+  `colors`), re-exported from `src/index.ts`. Do not restate either here.
+- **This is the port target.** A control that exists on the web and not in RN
+  is ported into this library, never reimplemented in a consumer app.
+- **Each component is `src/ui/ComponentName/{ComponentName.tsx, index.ts}`**,
+  re-exported from `src/index.ts`; cross-platform logic in a `*.shared.ts`.
+  Every component takes `className?`, extends the matching RN base props, and
+  exports its `*Props`. Use `Pressable` (not `TouchableOpacity`), `onPress`
+  (not `onClick`), RN accessibility props (not ARIA).
+
+## Cross-cutting rules (each pinned by a test; do not relearn them)
+
+- **A touchable wires `onPress` AND `onAccessibilityTap` — spread
+  `pressProps(handler, disabled)` from `lib/a11y`, never write `onPress`
+  alone.** On react-native-macos an assistive activation arrives *only* as
+  `onAccessibilityTap` (no synthesized press), so a press-only control focuses,
+  announces, and does nothing; iOS hides the gap by falling back to a press.
+  `pressProps` withholds the tap when `disabled`, and `accessibilityState` must
+  report `disabled`/`selected`/`checked` too. Exemption: a
+  `/* no-a11y-tap: <reason> */` comment inside the tag (used by a few scrim-
+  swallowing modal panels); a bare one with no reason is not an exemption.
+  `__tests__/accessibility-tap-guard.test.ts` fails on any violation via the
+  parsing scanner `jest.touchable-scan.cjs` (it parses, not pattern-matches —
+  a hand-written blanker once ate a file at a JSX apostrophe and hid real bugs).
+- **Every colour is a semantic token, and a class wherever NativeWind can carry
+  it** — a class resolves against the host's runtime `vars()`, so a host can
+  pick Dark on a light-OS device; `useColorScheme()` / `colors.raw` get that
+  wrong. Props that look like strings often take a class: `ActivityIndicator`
+  (`className='text-primary'`), `TextInput` placeholder, an `Svg` made in this
+  package's JSX (via `lib/svg-interop`, `fill='currentColor'`). What cannot take
+  a class (`Switch` `trackColor`, icon `color`) uses `useThemeColor`
+  (`lib/theme-color`); an icon slot via `resolveIconColor` (`lib/icon-color`);
+  cache per theme with `themeCached` (`lib/theme-cache`), never at module load.
+  RN `Text` inherits no colour — put the `text-*` class on the `Text`.
+  `__tests__/theme-color-scan.test.ts` refuses `colors.raw`, hex, palette
+  classes and `color=` on `ActivityIndicator` (allow-list with a reason each;
+  `bg-black/NN` scrims exempt).
+- **Full-screen / edge-anchored surfaces pad all four insets — spread
+  `safeAreaPadding(insets, edges?)` from `lib/safe-area`, not hand paddings.**
+  The bug is always `left`/`right` forgotten: a portrait phone reports both as
+  **0**, so it looks fine everywhere until a landscape cutout takes a whole
+  column (a modal's close button landed entirely inside it). Padding not margin,
+  applied inside the surface; a centred card is centred in the *safe area* and
+  capped at the safe width; `edges` only for a surface that truly touches some
+  (a bottom sheet skips top — see `SHEET_EDGES`). `SafeAreaView` from
+  `react-native-safe-area-context` already does all four — don't narrow it with
+  `edges` without the same reasoning. `__tests__/safe-area-insets.test.tsx`
+  pins it against asymmetric insets (159 left, 0 right).
+- **A picker trigger's label uses `selectTriggerLabelStyle` from
+  `lib/select-trigger`, never `flex: 1`.** `flex:1` sets `flexBasis:0` (text
+  needs no width); in a content-sized parent (a toolbar/settings row) the
+  trigger collapses to a bare chevron. Needs `flexBasis:'auto'` + `flexGrow:1`
+  + `flexShrink:1` with `numberOfLines={1}`.
+- **Every `TextInput` spreads `textInputDefaults` from `lib/text-input`**
+  (carries `disableFullscreenUI: true`, or Android replaces the app with a
+  full-screen editor in landscape). Spread it *before* a caller's props so a
+  caller can opt back in; components taking no props spread declare their own
+  defaulted `disableFullscreenUI?`. `__tests__/text-input-defaults.test.tsx`
+  fails on a bare `<TextInput>` in `src/ui`. Domain bundles write the prop
+  literally (they resolve this package from npm, not source).
+
+## Build / packaging
+
+- **Vite library mode**, ESM + CJS, declarations with source maps, not
+  minified. `@/` → `src/`. Externals: React, React Native, NativeWind,
+  `@sudobility/design`, clsx, CVA. **The `react-native` field (and each export's
+  `react-native` condition) points at `src/`**, so Metro consumers run source,
+  not `dist` — a locally built copy must have its `src/` synced in too, or the
+  app runs source while tests (reading `dist`) pass against the new code.
+- **Native slider:** `MoosiacNativeSlider` is a Fabric component — AppKit
+  `NSSlider` on macOS (`macos/*.mm`), Composition on Windows (`windows/`,
+  `windows/codegen`) — declared in `package.json` `codegenConfig` and shipped
+  via `mail_box_components_rn.podspec` (iOS/macOS source under `macos/`,
+  guarded by `TARGET_OS_OSX`). iOS uses `@react-native-community/slider`.
+- **Jest** uses the react-native preset; `transformIgnorePatterns` must name
+  every ESM dep by hand *and* allow bun's `.bun/<pkg>@<ver>/node_modules/<pkg>`
+  layout. `jest.mocks.cjs` mocks native modules that throw at import.
+- **styling:** `cn()` (`lib/utils`) wraps clsx. Variant maps are plain objects
+  in each component; core components (Button, Input, Alert, Card) call
+  `@sudobility/design` variant functions. Dark mode via `dark:` classes.
+
+## Structure
+
+- `src/index.ts` — root export (core UI). `src/<domain>/index.ts` — subpath
+  exports.
+- `src/ui/*` — 90+ component dirs.
+- `src/lib/*` — the shared rules above: `a11y`, `theme-color`/`icon-color`/
+  `text-color`/`theme-cache`/`svg-interop`, `safe-area`/`safe-area-edges`,
+  `select-trigger`/`select-popover`, `text-input`, `touch-target`,
+  `form-factor`/`large-screen`, `platform-stack`, `utils` (`cn`).
+- `src/__tests__/*` — the guard tests named above; `jest.touchable-scan.cjs`
+  (repo root) is the one shared touchable scanner.
+- `macos/`, `windows/` — native slider.
+
+## Screen rendering — safe area (per axis, by whether it scrolls)
+
+Pad by the actual inset value, never a magic number. **Not scrollable on an
+axis** → pad that axis's insets (content stops clear of status bar / notch /
+home indicator / cutout). **Scrollable on an axis** → render full-bleed and
+give that axis *scroll* insets (`contentInset` + `scrollIndicatorInsets`, or
+`contentInsetAdjustmentBehavior="automatic"`). **Bottom CTA under a tab bar:**
+`insets.bottom` already includes the tab-bar height — pad by `insets.bottom`
+and nothing more; never add the tab-bar height on top, re-reserve it on the
+root, or swap the inset for a flat gap. Canonical fixed screen: flex-column
+root → content/scroll region → bottom action bar as last child padding
+`insets.bottom`.
