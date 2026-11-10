@@ -19,7 +19,6 @@ import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
 import { useSurfaceInsets } from '../../lib/safe-area-edges';
-import { Text as UIText } from '../Text';
 import {
   createPlatformStackNavigator,
   type PlatformStackNavigator,
@@ -178,6 +177,15 @@ export interface MasterDetailLayoutProps {
   masterTitle?: string;
   detailTitle?: string;
   /**
+   * Action buttons for the master column's header (its right side). On a
+   * **desktop** the master's title-only bar is redundant chrome — the window
+   * titles the app — so the two-column master bar is drawn there **only when it
+   * has these actions**; without them the list stands alone (the detail still
+   * gets its bar). On a phone/tablet the master bar is always drawn and these
+   * sit in it. Ignored unless `headerShown`.
+   */
+  masterActions?: React.ReactNode;
+  /**
    * Draw the platform's own titled navigation bar — on each column when wide and
    * on the drill-in when narrow. Off by default, so a host that draws its own
    * bars (panes that are navigators of their own) does not get a second.
@@ -270,6 +278,7 @@ export function MasterDetailLayout({
   onBack,
   masterTitle,
   detailTitle,
+  masterActions,
   headerShown = false,
   theme,
   headerTitleAlign,
@@ -303,7 +312,7 @@ export function MasterDetailLayout({
   // bar's colour so the status-bar strip reads as one continuous bar.
   const barColor = headerShown ? theme?.colors.card : undefined;
   const masterNode = headerShown ? (
-    <Panel title={masterTitle} navTheme={theme}>
+    <Panel title={masterTitle} navTheme={theme} actions={masterActions}>
       {master}
     </Panel>
   ) : (
@@ -576,24 +585,28 @@ function DetailPane({
 }
 
 /**
- * A column under the platform's own navigation bar (when `headerShown`). In the
- * two-column layout each column is wrapped in one; in the drill-in / controlled
- * narrow layouts the column is bare content (the stack's own header, or the
- * controlled back control, carries the chrome there) with only its side
- * safe-area cleared. A desktop draws no bar: the detail is titled in its own
- * content, the list by the window.
+ * A column under a titled bar (when `headerShown`). In the phone/tablet
+ * two-column layout each column wears the platform's own navigation bar; in the
+ * drill-in / controlled narrow layouts the column is bare content (the stack's
+ * own header, or the controlled back control, carries the chrome) with only its
+ * side safe-area cleared. On a desktop — where no native stack header draws —
+ * each column gets a plain themed title bar instead, but the master's is drawn
+ * only when it has action buttons (a title-only sidebar bar is redundant there);
+ * the detail always gets one.
  */
 function Panel({
   title,
   secondary = false,
   detailMaxWidth,
   navTheme,
+  actions,
   children,
 }: {
   title?: string;
   secondary?: boolean;
   detailMaxWidth?: number;
   navTheme?: Theme;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { isWide } = useMasterDetail();
@@ -608,20 +621,26 @@ function Panel({
     ) : (
       children
     );
+
+  // DESKTOP two-column: a plain themed title bar (react-native-macos / windows
+  // draw no native stack header). The detail always wears one; the master only
+  // when it has action buttons, because a title-only bar over the sidebar list
+  // is redundant chrome there — the window already titles the app.
   if (DESKTOP) {
+    const showBar = secondary || actions != null;
     return (
       <View className='min-h-0 flex-1 bg-background'>
-        {secondary && title ? (
-          <View style={styles.desktopTitle}>
-            <UIText size='xl' weight='semibold'>
-              {title}
-            </UIText>
-          </View>
+        {showBar ? (
+          <DesktopBar title={title ?? ''} actions={actions} theme={navTheme} />
         ) : null}
         {capped}
       </View>
     );
   }
+
+  // Narrow (drill-in / controlled): the stack's own header, or the controlled
+  // back control, carries the chrome; this column is bare content with only its
+  // side safe-area cleared.
   if (!isWide) {
     const sides = secondary
       ? { paddingLeft: insets.left, paddingRight: insets.right }
@@ -632,9 +651,16 @@ function Panel({
       </View>
     );
   }
+
+  // Phone / tablet two-column: the platform's own navigation bar via a
+  // one-screen native stack, master and detail alike.
   const sides = secondary ? { paddingRight: insets.right } : undefined;
   return (
-    <NativeHeaderPanel title={title ?? ''} theme={navTheme}>
+    <NativeHeaderPanel
+      title={title ?? ''}
+      theme={navTheme}
+      headerRight={actions}
+    >
       <View className='min-h-0 flex-1 bg-background' style={sides}>
         {capped}
       </View>
@@ -651,10 +677,12 @@ function Panel({
 function NativeHeaderPanel({
   title,
   theme,
+  headerRight,
   children,
 }: {
   title: string;
   theme?: Theme;
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { native, Stack } = loadNav();
@@ -674,12 +702,58 @@ function NativeHeaderPanel({
       <NavigationIndependentTree>
         <NavigationContainer theme={theme}>
           <Stack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
-            <Stack.Screen name='Panel' options={{ title, headerShown: true }}>
+            <Stack.Screen
+              name='Panel'
+              options={{
+                title,
+                headerShown: true,
+                headerRight: headerRight ? () => <>{headerRight}</> : undefined,
+              }}
+            >
               {() => <>{children}</>}
             </Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
       </NavigationIndependentTree>
+    </View>
+  );
+}
+
+/**
+ * A plain themed title bar for the two-column layout on a desktop, where no
+ * native stack header draws. Painted the nav theme's bar colour, with the title
+ * (and optional action buttons) on it.
+ */
+function DesktopBar({
+  title,
+  actions,
+  theme,
+}: {
+  title: string;
+  actions?: React.ReactNode;
+  theme?: Theme;
+}) {
+  const barColor = theme?.colors.card;
+  const textColor = theme?.colors.text;
+  const borderColor = theme?.colors.border;
+  return (
+    <View
+      style={[
+        styles.desktopBar,
+        barColor ? { backgroundColor: barColor } : null,
+        borderColor ? { borderBottomColor: borderColor } : null,
+      ]}
+    >
+      <Text
+        numberOfLines={1}
+        style={[
+          styles.desktopBarTitle,
+          textColor ? { color: textColor } : null,
+        ]}
+      >
+        {title}
+      </Text>
+      {actions ? <View style={styles.desktopBarActions}>{actions}</View> : null}
     </View>
   );
 }
@@ -691,6 +765,15 @@ const styles = StyleSheet.create({
   divider: { width: StyleSheet.hairlineWidth },
   // The controlled narrow detail's built-in back control.
   backControl: { paddingHorizontal: 16, paddingVertical: 12 },
-  // The detail's title on a desktop, where no bar carries it.
-  desktopTitle: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 4 },
+  // The two-column desktop title bar (no native stack header on a desktop).
+  desktopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    minHeight: 44,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  desktopBarTitle: { fontSize: 17, fontWeight: '600' },
+  desktopBarActions: { flexDirection: 'row', alignItems: 'center' },
 });
