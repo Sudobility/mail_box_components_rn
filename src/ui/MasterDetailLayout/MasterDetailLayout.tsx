@@ -1,16 +1,43 @@
 import * as React from 'react';
-import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Platform,
+  StyleSheet,
+  I18nManager,
+} from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { InitialState, Theme } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaInsetsContext,
+  useSafeAreaInsets,
+  type EdgeInsets,
+} from 'react-native-safe-area-context';
 import { cn } from '../../lib/utils';
 import { resolveIconColor, useIconColor } from '../../lib/icon-color';
 import { pressProps } from '../../lib/a11y';
+import { useSurfaceInsets } from '../../lib/safe-area-edges';
+import { Text as UIText } from '../Text';
 import {
   createPlatformStackNavigator,
   type PlatformStackNavigator,
 } from '../../lib/platform-stack';
+
+/** The master column's width beside the detail, in points. */
+export const SPLIT_PRIMARY_PANEL_WIDTH = 320;
+/** The detail's default minimum width before the layout collapses to one column. */
+export const SPLIT_DETAIL_MIN_WIDTH = 400;
+
+/** A desktop renders no panel navigation bar (react-native-macos/windows draw no
+ * stack header); the detail is headed by a title in its own content and the list
+ * is left to the window's title. */
+const DESKTOP = Platform.OS === 'macos' || Platform.OS === 'windows';
+/** Only a phone/tablet drills in; a desktop is always wide. */
+const CAN_DRILL_IN = Platform.OS === 'ios' || Platform.OS === 'android';
+
+const ZERO_INSETS: EdgeInsets = { top: 0, bottom: 0, left: 0, right: 0 };
 
 /**
  * MasterListItem - Standardized list item with selection styling
@@ -88,28 +115,32 @@ export const MasterListItem: React.FC<MasterListItemProps> = ({
 };
 
 /**
- * MasterDetailLayout — the family's one responsive master/detail.
+ * MasterDetailLayout — the family's ONE responsive master/detail.
  *
  * Wide enough for two columns, the master list and the detail sit side by side
- * and choosing a row updates the detail in place. Too narrow for two (a phone
- * in portrait), it is one column at a time and choosing a row **pushes** the
- * detail over the master on a real navigation stack — the platform's own slide
- * and interactive back-swipe, not a hand-rolled animation. A back control (the
- * stack's own header, or `useMasterDetail().showMaster()`) returns.
+ * and choosing a row updates the detail in place. Too narrow for two (a phone in
+ * portrait), it is one column at a time: either an internal drill-in on the
+ * platform's own navigation stack (the zero-config default) or — in controlled
+ * `mobileView` mode — a plain master/detail swap the host's router drives, so a
+ * deep link resolves straight to the detail.
  *
- * The push is a `@react-navigation/native-stack` in a `NavigationIndependentTree`
- * of its own, so a host drops this in without wiring it into its navigator. The
- * stack is created only in the narrow branch, so react-native-screens is never
- * asked for the macOS slice it does not ship — a desktop is always wide.
+ * **Chrome is `headerShown`, and it governs BOTH layouts.** With it on, the
+ * layout owns the screen: each column gets the platform's own titled navigation
+ * bar (a one-screen native navigator) when wide, and the drill-in's real stack
+ * header when narrow — the Settings/reading shape. With it off, the layout draws
+ * no bars, so a host whose panes are themselves navigators (a multi-level detail
+ * stack) supplies their headers with no doubling. That single switch is why one
+ * component now serves both the Settings case and the content-stack case that
+ * used to need two (`SplitViewContainer` was folded in here).
  *
- * Width is measured with `onLayout`, never `useWindowDimensions`: the view's own
- * frame is right inside a split that is narrower than the window, and on macOS
- * the window dimensions are the display's. Two columns until measured, so a test
- * renderer (which lays nothing out) and the first frame both show two.
+ * The narrow drill-in is a `@react-navigation/native-stack` in a
+ * `NavigationIndependentTree` of its own, built only in the narrow branch (so
+ * react-native-screens is never asked for the macOS slice it does not ship — a
+ * desktop is always wide). Width is measured with `onLayout`, never
+ * `useWindowDimensions`, so it is right inside a split and on macOS alike.
  *
- * The list reaches the push through `useMasterDetail()`: `showDetail()` on a row
- * press, and `isWide` to tell a drill-in from a selection the detail beside it
- * already shows.
+ * `SplitMenuList` / `EmptySecondaryPanel` (the Settings master list and its empty
+ * detail) are plain list helpers that pair with this; see `../SplitView`.
  */
 export interface MasterDetailLayoutProps {
   /** The master list. It calls `useMasterDetail().showDetail()` on a row press. */
@@ -118,85 +149,70 @@ export interface MasterDetailLayoutProps {
   detail: React.ReactNode;
   /** The two-column master width, in points (default 320). */
   masterWidth?: number;
-  /** At/above this measured width both columns show; below it, drill in (default 768). */
+  /**
+   * Drill in where there is room for only one column (default true). Pass
+   * `false` for a surface that is only ever two columns (a desktop window, a
+   * landscape-only app).
+   */
+  collapsible?: boolean;
+  /**
+   * The minimum width the detail needs beside the master: both columns show only
+   * while `masterWidth + detailMinWidth` fits the measured width (default 400).
+   * Honoured only when `collapsible` and no explicit `breakpoint` is given.
+   */
+  detailMinWidth?: number;
+  /**
+   * Cap the detail's content to this width and centre it past it, so a line
+   * never runs the full width of a wide window. Omitted, the detail fills its
+   * pane. Only meaningful with `headerShown` (the layout-owned chrome).
+   */
+  detailMaxWidth?: number;
+  /**
+   * The measured width at/above which both columns show. An advanced override;
+   * normally derived from `collapsible` + `masterWidth` + `detailMinWidth`.
+   */
   breakpoint?: number;
   /** Called when the reader returns from the detail to the master (narrow only). */
   onBack?: () => void;
-  /** Titles for the pushed screens' own header; used only with `headerShown`. */
+  /** Titles for the columns' / pushed screens' own header; used with `headerShown`. */
   masterTitle?: string;
   detailTitle?: string;
   /**
-   * Draw the native stack's own header on the narrow screens. Off by default,
-   * so a host that draws its own bar (the common case) does not get a second.
+   * Draw the platform's own titled navigation bar — on each column when wide and
+   * on the drill-in when narrow. Off by default, so a host that draws its own
+   * bars (panes that are navigators of their own) does not get a second.
    */
   headerShown?: boolean;
   /**
-   * The React Navigation theme for the drill-in stack's own container, so the
-   * native header follows the app's colours (its `card` is the bar background,
-   * its `text` the title and back control) rather than the library default's
-   * white. Only used on the narrow drill-in, which is the only place a
-   * navigator exists.
+   * The React Navigation theme the bars follow (its `card` is the bar
+   * background, its `text` the title and back control). Used by the two-column
+   * column bars and the narrow drill-in's container.
    */
   theme?: Theme;
-  /**
-   * How the drill-in header's title sits — `'center'` to match iOS's own
-   * navigation bar, `'left'` for Material's. Native-stack's platform default
-   * when omitted. Only the narrow drill-in has a header to align.
-   */
+  /** How the header's title sits — `'center'` (iOS) or `'left'` (Material). */
   headerTitleAlign?: 'left' | 'center';
   /**
-   * Whether the detail is the focused column — controlled, and read only when
-   * the drill-in mounts (the narrow layout). Crossing the breakpoint — a phone
-   * rotated between portrait and landscape, the iPhone Duo folded or unfolded,
-   * an iPad narrowed in Split View — swaps the whole two-column/drill-in
-   * subtree, so the drill-in's navigator is built afresh each time and, left to
-   * itself, always starts on the master. With this `true` it starts on the
-   * detail instead (the master beneath it, so Back still returns to the list),
-   * the way `UISplitViewController` keeps the detail when it collapses: a reader
-   * reading the detail in landscape stays on it after rotating to portrait
-   * rather than being dropped back to the list.
-   *
-   * Omitted, the drill-in always begins on the master — the previous behaviour.
-   * It is controlled because the parent is the only thing that outlives the
-   * remount a breakpoint crossing forces; pair it with `onDetailFocusedChange`
-   * so the parent's copy follows the reader's own drilling in and back, and the
-   * right value is seeded on the next crossing.
+   * Whether the detail is the focused column — controlled, read when the
+   * drill-in mounts. Crossing the breakpoint rebuilds the drill-in, which left
+   * to itself opens on the master; `true` opens it on the detail (Back still
+   * returns to the list), so a reader stays on what they were reading across a
+   * rotation. Pair with {@link onDetailFocusedChange}.
    */
   detailFocused?: boolean;
-  /**
-   * The focused column changed inside the drill-in: the reader drilled into the
-   * detail (`true`) or returned to the master (`false`). Lets the parent keep
-   * {@link detailFocused} current across the remount a breakpoint crossing
-   * forces. Not called in the two-column layout, which has no drill-in.
-   */
+  /** The focused column changed inside the drill-in (drilled in `true` / back `false`). */
   onDetailFocusedChange?: (focused: boolean) => void;
   /**
-   * Controlled / deep-link mode — the web component's model, for a host whose
-   * own router (React Navigation with a `linking` config, or any route state)
-   * owns which item is selected, so a **deep link into a detail works**. When
-   * set, the layout creates NO navigator of its own: wide shows both columns;
-   * narrow shows the master when `'navigation'` and the detail when `'content'`.
-   * The host derives this from a route — e.g. a screen param the `linking`
-   * config maps — exactly as the web app derives its `mobileView` from the URL,
-   * so RN and web take the same approach. In this mode the master content
-   * navigates (updating that route) on a row press rather than calling
-   * `showDetail()`, and the detail returns through `onBackToNavigation` (which
-   * `useMasterDetail().showMaster()` also calls).
-   *
-   * Omitted, the layout is uncontrolled: it drills in on its own internal
-   * `NavigationIndependentTree` stack — which a deep link cannot reach — the
-   * existing behaviour for self-contained screens, and what `detailFocused`
-   * tunes.
+   * Controlled / deep-link mode — for a host whose own router owns which item is
+   * selected, so a deep link into a detail works. When set, the layout creates
+   * no navigator of its own: wide shows both columns; narrow shows the master
+   * when `'navigation'` and the detail when `'content'`. The master content
+   * navigates (updating the route) on a row press, and the detail returns
+   * through `onBackToNavigation`.
    */
   mobileView?: 'navigation' | 'content';
   /** Controlled mode: return from the detail to the master (the host clears the route). */
   onBackToNavigation?: () => void;
-  /**
-   * Controlled mode: the label on the narrow detail's built-in back control
-   * (defaults to `masterTitle`, then "Back"). The control is drawn only when
-   * `onBackToNavigation` is given — a host whose detail route has its own
-   * native header omits it and lets that header carry back.
-   */
+  /** Controlled mode: label on the narrow detail's built-in back control (default `masterTitle`). */
   backButtonText?: string;
 }
 
@@ -224,12 +240,10 @@ type MasterDetailParamList = { Master: undefined; Detail: undefined };
 type MasterDetailNavigation = NativeStackNavigationProp<MasterDetailParamList>;
 
 /**
- * `@react-navigation` is required only when the layout actually drills in —
- * never at module load. So importing this component (or anything else from the
- * library's barrel), and rendering its wide two-column layout, pulls in no
- * navigator: a host whose screens are only ever wide, and a test that merely
- * imports from the library, do not need react-navigation present or mocked.
- * Only the narrow push, which genuinely needs a navigator, loads one.
+ * `@react-navigation` is required only when the layout actually draws a
+ * navigator (the narrow drill-in, or a wide column bar) — never at module load,
+ * so importing this component and rendering a bar-less two-column layout pulls
+ * in no navigator.
  */
 type NativeModule = typeof import('@react-navigation/native');
 type LazyNav = {
@@ -240,22 +254,19 @@ let lazyNav: LazyNav | null = null;
 function loadNav(): LazyNav {
   if (!lazyNav) {
     const native = require('@react-navigation/native') as NativeModule;
-    // Native stack on a phone / tablet, JS stack on a desktop — though only a
-    // phone/tablet ever drills in (`CAN_DRILL_IN`), so this is the native one in
-    // practice. One wrapper either way (`createPlatformStackNavigator`).
     lazyNav = { native, Stack: createPlatformStackNavigator() };
   }
   return lazyNav;
 }
 
-/** Only a phone drills in; a desktop is always wide (and has no screens slice). */
-const CAN_DRILL_IN = Platform.OS === 'ios' || Platform.OS === 'android';
-
 export function MasterDetailLayout({
   master,
   detail,
-  masterWidth = 320,
-  breakpoint = 768,
+  masterWidth = SPLIT_PRIMARY_PANEL_WIDTH,
+  collapsible = true,
+  detailMinWidth = SPLIT_DETAIL_MIN_WIDTH,
+  detailMaxWidth,
+  breakpoint,
   onBack,
   masterTitle,
   detailTitle,
@@ -272,28 +283,69 @@ export function MasterDetailLayout({
   const onLayout = React.useCallback((event: LayoutChangeEvent) => {
     setWidth(event.nativeEvent.layout.width);
   }, []);
+  // The width at/above which both columns show: an explicit override, else
+  // master + detail-minimum when collapsible, else 0 (always two columns).
+  const effectiveBreakpoint =
+    breakpoint !== undefined
+      ? breakpoint
+      : collapsible
+        ? masterWidth + detailMinWidth
+        : 0;
   // Two columns until measured, and wherever there is room or no way to drill in.
-  const twoColumn = !CAN_DRILL_IN || width === null || width >= breakpoint;
-  // Controlled / deep-link mode: the host owns the selection through a route, so
-  // the narrow layout is a plain master-or-detail swap with no navigator of its
-  // own (the web component's model) rather than the internal drill-in stack.
+  const twoColumn =
+    !CAN_DRILL_IN || width === null || width >= effectiveBreakpoint;
+  // Controlled / deep-link mode: the host owns the selection through a route.
   const controlled = mobileView !== undefined;
+
+  // Chrome: when `headerShown`, each column / pushed screen is dressed in the
+  // platform's own titled bar via a `Panel`; otherwise content is passed raw so
+  // a host's own navigators draw the bars. The whole surface is painted the
+  // bar's colour so the status-bar strip reads as one continuous bar.
+  const barColor = headerShown ? theme?.colors.card : undefined;
+  const masterNode = headerShown ? (
+    <Panel title={masterTitle} navTheme={theme}>
+      {master}
+    </Panel>
+  ) : (
+    master
+  );
+  const detailNode = headerShown ? (
+    <Panel
+      secondary
+      title={detailTitle}
+      detailMaxWidth={detailMaxWidth}
+      navTheme={theme}
+    >
+      {detail}
+    </Panel>
+  ) : (
+    detail
+  );
+
   return (
-    <View testID='master-detail' style={styles.fill} onLayout={onLayout}>
+    <View
+      testID='master-detail'
+      style={[styles.fill, barColor ? { backgroundColor: barColor } : null]}
+      onLayout={onLayout}
+    >
       {twoColumn ? (
-        <TwoColumn master={master} detail={detail} masterWidth={masterWidth} />
+        <TwoColumn
+          master={masterNode}
+          detail={detailNode}
+          masterWidth={masterWidth}
+        />
       ) : controlled ? (
         <ControlledNarrow
-          master={master}
-          detail={detail}
+          master={masterNode}
+          detail={detailNode}
           mobileView={mobileView}
           onBackToNavigation={onBackToNavigation}
           backLabel={backButtonText ?? masterTitle}
         />
       ) : (
         <DrillIn
-          master={master}
-          detail={detail}
+          master={masterNode}
+          detail={detailNode}
           onBack={onBack}
           masterTitle={masterTitle}
           detailTitle={detailTitle}
@@ -310,12 +362,7 @@ export function MasterDetailLayout({
 
 /**
  * The narrow layout in controlled / deep-link mode: a plain master-or-detail
- * swap driven by the host's `mobileView`, with no navigator of its own — so a
- * deep link the host's router resolves lands straight on the detail. Mirrors the
- * web `MasterDetailLayout`'s mobile behaviour. `useMasterDetail()` still answers
- * here (`isWide` false, `showMaster` → `onBackToNavigation`), so a detail that
- * asks the context for its way back keeps working; `showDetail` is inert because
- * the host's master content navigates the route itself.
+ * swap driven by the host's `mobileView`, with no navigator of its own.
  */
 function ControlledNarrow({
   master,
@@ -382,12 +429,31 @@ function TwoColumn({
   detail: React.ReactNode;
   masterWidth: number;
 }) {
+  // Each pane keeps the window insets on its outer edges but zeroes the inner
+  // edge it shares with the divider, so content inside a pane (which reads the
+  // window insets) does not pad against the divider, and the far pane keeps the
+  // real side inset in landscape. The primary pane is leading (left in LTR).
+  const insets = React.useContext(SafeAreaInsetsContext) ?? ZERO_INSETS;
+  const primaryInsets: EdgeInsets = I18nManager.isRTL
+    ? { ...insets, left: 0 }
+    : { ...insets, right: 0 };
+  const secondaryInsets: EdgeInsets = I18nManager.isRTL
+    ? { ...insets, right: 0 }
+    : { ...insets, left: 0 };
   return (
     <MasterDetailContext.Provider value={WIDE_CONTEXT}>
       <View style={styles.row}>
-        <View style={{ width: masterWidth }}>{master}</View>
+        <View style={{ width: masterWidth }}>
+          <SafeAreaInsetsContext.Provider value={primaryInsets}>
+            {master}
+          </SafeAreaInsetsContext.Provider>
+        </View>
         <View className='bg-border' style={styles.divider} />
-        <View style={styles.detail}>{detail}</View>
+        <View style={styles.detail}>
+          <SafeAreaInsetsContext.Provider value={secondaryInsets}>
+            {detail}
+          </SafeAreaInsetsContext.Provider>
+        </View>
       </View>
     </MasterDetailContext.Provider>
   );
@@ -395,10 +461,8 @@ function TwoColumn({
 
 /**
  * The drill-in's starting state when the detail is the focused column: the
- * master in the stack with the detail pushed over it (`index: 1`), so the
- * layout opens on the detail and Back still returns to the list. Read by
- * `NavigationContainer` once, when it mounts — which is exactly each time a
- * breakpoint crossing rebuilds this subtree.
+ * master in the stack with the detail pushed over it, so the layout opens on the
+ * detail and Back still returns to the list.
  */
 const DETAIL_FOCUSED_STATE: InitialState = {
   index: 1,
@@ -430,34 +494,36 @@ function DrillIn({
 }) {
   const { native, Stack } = loadNav();
   const { NavigationContainer, NavigationIndependentTree } = native;
+  // Paint the surface the bar's colour so the status-bar strip the native header
+  // leaves above itself reads as part of the bar (not the app background as a
+  // white band), the way `TitledScreen` does it. `flex-1` keeps the container
+  // sized.
+  const barColor = headerShown ? theme?.colors.card : undefined;
   return (
-    <NavigationIndependentTree>
-      <NavigationContainer
-        theme={theme}
-        // Seed the detail on top when the parent says it was the focused column,
-        // so a wide→narrow collapse lands there rather than on the list. Only
-        // read at mount, which is when a breakpoint crossing rebuilds this tree.
-        initialState={detailFocused ? DETAIL_FOCUSED_STATE : undefined}
-        // Report drilling in and back so the parent's `detailFocused` stays
-        // current for the next crossing. `index > 0` means the detail is on top;
-        // it is not called on the initial mount (the parent already knows that
-        // from `detailFocused`), only on a later push or pop.
-        onStateChange={
-          onDetailFocusedChange
-            ? state => onDetailFocusedChange((state?.index ?? 0) > 0)
-            : undefined
-        }
-      >
-        <Stack.Navigator screenOptions={{ headerShown, headerTitleAlign }}>
-          <Stack.Screen name='Master' options={{ title: masterTitle ?? '' }}>
-            {() => <MasterPane>{master}</MasterPane>}
-          </Stack.Screen>
-          <Stack.Screen name='Detail' options={{ title: detailTitle ?? '' }}>
-            {() => <DetailPane onBack={onBack}>{detail}</DetailPane>}
-          </Stack.Screen>
-        </Stack.Navigator>
-      </NavigationContainer>
-    </NavigationIndependentTree>
+    <View
+      style={[styles.fill, barColor ? { backgroundColor: barColor } : null]}
+    >
+      <NavigationIndependentTree>
+        <NavigationContainer
+          theme={theme}
+          initialState={detailFocused ? DETAIL_FOCUSED_STATE : undefined}
+          onStateChange={
+            onDetailFocusedChange
+              ? state => onDetailFocusedChange((state?.index ?? 0) > 0)
+              : undefined
+          }
+        >
+          <Stack.Navigator screenOptions={{ headerShown, headerTitleAlign }}>
+            <Stack.Screen name='Master' options={{ title: masterTitle ?? '' }}>
+              {() => <MasterPane>{master}</MasterPane>}
+            </Stack.Screen>
+            <Stack.Screen name='Detail' options={{ title: detailTitle ?? '' }}>
+              {() => <DetailPane onBack={onBack}>{detail}</DetailPane>}
+            </Stack.Screen>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </NavigationIndependentTree>
+    </View>
   );
 }
 
@@ -488,7 +554,6 @@ function DetailPane({
   const navigation = loadNav().native.useNavigation<MasterDetailNavigation>();
   React.useEffect(() => {
     if (!onBack) return undefined;
-    // Fires on the back gesture and the header back alike, as the detail leaves.
     return navigation.addListener('beforeRemove', () => onBack());
   }, [navigation, onBack]);
   const value = React.useMemo<MasterDetailContextValue>(
@@ -506,6 +571,115 @@ function DetailPane({
   );
 }
 
+/**
+ * A column under the platform's own navigation bar (when `headerShown`). In the
+ * two-column layout each column is wrapped in one; in the drill-in / controlled
+ * narrow layouts the column is bare content (the stack's own header, or the
+ * controlled back control, carries the chrome there) with only its side
+ * safe-area cleared. A desktop draws no bar: the detail is titled in its own
+ * content, the list by the window.
+ */
+function Panel({
+  title,
+  secondary = false,
+  detailMaxWidth,
+  navTheme,
+  children,
+}: {
+  title?: string;
+  secondary?: boolean;
+  detailMaxWidth?: number;
+  navTheme?: Theme;
+  children: React.ReactNode;
+}) {
+  const { isWide } = useMasterDetail();
+  const insets = useSurfaceInsets();
+  const capped =
+    secondary && detailMaxWidth !== undefined ? (
+      <View className='flex-1 items-center'>
+        <View className='w-full flex-1' style={{ maxWidth: detailMaxWidth }}>
+          {children}
+        </View>
+      </View>
+    ) : (
+      children
+    );
+  if (DESKTOP) {
+    return (
+      <View className='min-h-0 flex-1 bg-background'>
+        {secondary && title ? (
+          <View style={styles.desktopTitle}>
+            <UIText size='xl' weight='semibold'>
+              {title}
+            </UIText>
+          </View>
+        ) : null}
+        {capped}
+      </View>
+    );
+  }
+  if (!isWide) {
+    const sides = secondary
+      ? { paddingLeft: insets.left, paddingRight: insets.right }
+      : undefined;
+    return (
+      <View className='min-h-0 flex-1 bg-background' style={sides}>
+        {capped}
+      </View>
+    );
+  }
+  const sides = secondary ? { paddingRight: insets.right } : undefined;
+  return (
+    <NativeHeaderPanel title={title ?? ''} theme={navTheme}>
+      <View className='min-h-0 flex-1 bg-background' style={sides}>
+        {capped}
+      </View>
+    </NativeHeaderPanel>
+  );
+}
+
+/**
+ * One panel under the platform's own navigation bar: an independent one-screen
+ * native stack, so the system draws the header (its height, the status-bar space
+ * above it and the centred title) and nothing here computes them. Only in the
+ * two-column layout; the drill-in's own stack titles the panes there.
+ */
+function NativeHeaderPanel({
+  title,
+  theme,
+  children,
+}: {
+  title: string;
+  theme?: Theme;
+  children: React.ReactNode;
+}) {
+  const { native, Stack } = loadNav();
+  const { NavigationContainer, NavigationIndependentTree } = native;
+  const barColor = theme?.colors.card;
+  return (
+    // The bar's own colour behind it, full-bleed and `flex-1`: the `flex-1` is
+    // what makes the nested native stack draw its header at all — a bare
+    // NavigationContainer in a column that has only a width (not flex) measures
+    // to nothing and the header never appears — and the colour fills the strip
+    // the native bar leaves above its opaque background, so it reads as one
+    // continuous bar rather than the app background showing through (this is what
+    // `TitledScreen` does for the plain screens).
+    <View
+      style={[styles.fill, barColor ? { backgroundColor: barColor } : null]}
+    >
+      <NavigationIndependentTree>
+        <NavigationContainer theme={theme}>
+          <Stack.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
+            <Stack.Screen name='Panel' options={{ title, headerShown: true }}>
+              {() => <>{children}</>}
+            </Stack.Screen>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </NavigationIndependentTree>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   row: { flex: 1, flexDirection: 'row' },
@@ -513,4 +687,6 @@ const styles = StyleSheet.create({
   divider: { width: StyleSheet.hairlineWidth },
   // The controlled narrow detail's built-in back control.
   backControl: { paddingHorizontal: 16, paddingVertical: 12 },
+  // The detail's title on a desktop, where no bar carries it.
+  desktopTitle: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 4 },
 });
