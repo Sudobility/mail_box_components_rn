@@ -443,15 +443,19 @@ function TwoColumn({
   return (
     <MasterDetailContext.Provider value={WIDE_CONTEXT}>
       <View style={styles.row}>
+        {/* Each column's content gets an explicit `flex-1` parent: a nested
+            navigator (a `NativeHeaderPanel`'s, or a host pane that is itself a
+            navigation stack) draws its header only inside a sized flex box — a
+            column that has only a width is not enough. */}
         <View style={{ width: masterWidth }}>
           <SafeAreaInsetsContext.Provider value={primaryInsets}>
-            {master}
+            <View style={styles.fill}>{master}</View>
           </SafeAreaInsetsContext.Provider>
         </View>
         <View className='bg-border' style={styles.divider} />
         <View style={styles.detail}>
           <SafeAreaInsetsContext.Provider value={secondaryInsets}>
-            {detail}
+            <View style={styles.fill}>{detail}</View>
           </SafeAreaInsetsContext.Provider>
         </View>
       </View>
