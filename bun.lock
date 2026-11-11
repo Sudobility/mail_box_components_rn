@@ -21,7 +21,7 @@
         "@react-navigation/native-stack": "~7.21.0",
         "@react-navigation/stack": "~7.12.1",
         "@sudobility/design": "^1.1.71",
-        "@sudobility/types": "^1.9.79",
+        "@sudobility/types": "^1.10.1",
         "@testing-library/jest-native": "~5.4.3",
         "@testing-library/react-native": "~13.3.3",
         "@types/jest": "~29.5.14",
@@ -62,7 +62,7 @@
         "@react-navigation/native-stack": ">=7.0.0",
         "@react-navigation/stack": ">=7.0.0",
         "@sudobility/design": "^1.1.71",
-        "@sudobility/types": "^1.9.79",
+        "@sudobility/types": "^1.10.1",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.0.0",
         "expo-clipboard": ">=5.0.0",
@@ -671,7 +671,7 @@
 
     "@sudobility/design": ["@sudobility/design@1.1.71", "https://npm.pkg.github.com/download/@sudobility/design/1.1.71/e3a174cea0da29ebb2f1c590750c647cf3d7e11c", { "peerDependencies": { "clsx": ">=2.0.0", "tailwind-merge": ">=2.0.0" } }, "sha512-qqQn+OLksBqqMePYz2Zv2eXl2GCt6fk+WBUvhzhKx2ZMZdrf2JlIvIdWq9qOvdZlhizxuwMMl4dI8orMI43Ikw=="],
 
-    "@sudobility/types": ["@sudobility/types@1.9.79", "https://npm.pkg.github.com/download/@sudobility/types/1.9.79/59975e39d6ab7e215418a489ef3cfe214b7521f4", {}, "sha512-rRtDT++fVy+I1m6E31fq752lxCQytFzwfqpJe5wDMPLcC1rJOBa7v+4+5e3cmX8VV1CsuLg8PTLMFe6A7AELRQ=="],
+    "@sudobility/types": ["@sudobility/types@1.10.1", "https://npm.pkg.github.com/download/@sudobility/types/1.10.1/8e353f55822e0bc3fa9555dfe3aee593e140c012", {}, "sha512-LmJyjDDY5rHDET1wstkT0i59SSOrOXijL2iqrgfcK6VHtKcBEw7FFpbw4CyHn+dhR9kqkYpEydSfypoqw7crMg=="],
 
     "@testing-library/jest-native": ["@testing-library/jest-native@5.4.3", "", { "dependencies": { "chalk": "^4.1.2", "jest-diff": "^29.0.1", "jest-matcher-utils": "^29.0.1", "pretty-format": "^29.0.3", "redent": "^3.0.0" }, "peerDependencies": { "react": ">=16.0.0", "react-native": ">=0.59", "react-test-renderer": ">=16.0.0" } }, "sha512-/sSDGaOuE+PJ1Z9Kp4u7PQScSVVXGud59I/qsBFFJvIbcn4P6yYw6cBnBmbPF+X9aRIsTJRDl6gzw5ZkJNm66w=="],
 
