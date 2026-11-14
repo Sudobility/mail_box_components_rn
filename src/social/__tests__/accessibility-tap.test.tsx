@@ -22,14 +22,19 @@ import { RatingStars } from '../RatingStars';
 import { ShareButtons } from '../ShareButtons';
 
 /*
-  `expo-clipboard` is an optional peer and its module core throws at import
-  time under jest ("Cannot read properties of undefined (reading
-  'EventEmitter')"), which takes the whole suite down before a single
-  assertion. ShareButtons only needs it for the copy-link platform.
+  `@react-native-clipboard/clipboard` is an optional peer that ShareButtons
+  loads lazily and only needs for the copy-link platform. Mock it so the lazy
+  `require` resolves under jest without pulling in a native module.
 */
-jest.mock('expo-clipboard', () => ({
-  setStringAsync: jest.fn(async () => true),
-}));
+jest.mock(
+  '@react-native-clipboard/clipboard',
+  () => ({
+    __esModule: true,
+    default: { setString: jest.fn() },
+  }),
+  // Optional peer — not installed in this package's own node_modules.
+  { virtual: true }
+);
 
 /** See the note in components-rn's own accessibility-tap test. */
 function touchableFor(element: ReactTestInstance): ReactTestInstance {

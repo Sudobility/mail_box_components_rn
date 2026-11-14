@@ -1,8 +1,18 @@
 import * as React from 'react';
 import { View, Text, Pressable, Share, Linking, Alert } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { cn } from './utils';
 import { pressProps } from './a11y';
+
+// Clipboard is an optional peer dependency — `@react-native-clipboard/clipboard`,
+// the community module the host apps already ship (no Expo). Loaded lazily so
+// this library still bundles when a consumer does not install it; the copy
+// button then just shows its "Copied!" feedback without writing to the clipboard.
+let Clipboard: { setString?: (text: string) => void } | undefined;
+try {
+  Clipboard = require('@react-native-clipboard/clipboard').default;
+} catch {
+  Clipboard = undefined;
+}
 
 export type SharePlatform =
   'native' | 'twitter' | 'facebook' | 'linkedin' | 'reddit' | 'email' | 'copy';
@@ -99,8 +109,8 @@ export const ShareButtons: React.FC<ShareButtonsProps> = ({
           break;
 
         case 'copy':
-          if (Clipboard && Clipboard.setStringAsync) {
-            await Clipboard.setStringAsync(url);
+          if (Clipboard?.setString) {
+            Clipboard.setString(url);
           }
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
