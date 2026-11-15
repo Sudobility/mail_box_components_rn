@@ -18,7 +18,7 @@ namespace winrt::MoosiacNativeSlider::implementation {
 void RegisterMoosiacNativeSlider(
     const winrt::Microsoft::ReactNative::IReactPackageBuilder &packageBuilder) noexcept;
 
-struct SliderView : winrt::implements<SliderView, winrt::IInspectable>,
+struct SliderView : winrt::implements<SliderView, winrt::Windows::Foundation::IInspectable>,
                     MoosiacSliderCodegen::BaseMoosiacNativeSlider<SliderView> {
   winrt::Microsoft::UI::Composition::Visual CreateVisual(
       const winrt::Microsoft::ReactNative::ComponentView &view) noexcept override;
