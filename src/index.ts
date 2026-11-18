@@ -173,6 +173,8 @@ export * from './ui/DateTimePicker';
 
 // UI Components - Advanced
 export * from './ui/InfiniteScroll';
+export * from './ui/LazyFlatList';
+export * from './ui/FadeInImage';
 export * from './ui/ExternalLink';
 export * from './ui/TextInputModal';
 export * from './ui/FormAlerts';
