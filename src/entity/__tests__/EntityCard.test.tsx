@@ -1,103 +1,68 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { EntityCard } from '../EntityCard';
-import type { Entity } from '../types';
-
-const baseEntity: Entity = {
-  id: '1',
-  name: 'Acme Corp',
-  description: 'A test organization',
-  role: 'admin',
-  memberCount: 5,
-};
+import { organization, personal } from './fixtures';
 
 describe('EntityCard', () => {
-  it('renders entity name', () => {
-    render(<EntityCard entity={baseEntity} />);
+  it('renders the name, the role and the workspace type', () => {
+    render(<EntityCard entity={organization} />);
     expect(screen.getByText('Acme Corp')).toBeTruthy();
+    expect(screen.getByText('manager')).toBeTruthy();
+    expect(screen.getByText('Organization')).toBeTruthy();
   });
 
-  it('renders avatar initial when no avatarUrl', () => {
-    render(<EntityCard entity={baseEntity} />);
-    expect(screen.getByText('A')).toBeTruthy();
+  it('labels a personal entity as a personal workspace', () => {
+    render(<EntityCard entity={personal} />);
+    expect(screen.getByText('Personal workspace')).toBeTruthy();
+    expect(screen.getByText('owner')).toBeTruthy();
   });
 
-  it('renders description when showDescription is true', () => {
-    render(<EntityCard entity={baseEntity} showDescription />);
+  it('renders the description when there is one', () => {
+    render(<EntityCard entity={organization} />);
     expect(screen.getByText('A test organization')).toBeTruthy();
   });
 
-  it('hides description when showDescription is false', () => {
-    render(<EntityCard entity={baseEntity} showDescription={false} />);
+  it('renders no description line when there is none', () => {
+    render(<EntityCard entity={personal} />);
     expect(screen.queryByText('A test organization')).toBeNull();
   });
 
-  it('renders role badge when showRole is true and entity has role', () => {
-    render(<EntityCard entity={baseEntity} showRole />);
-    expect(screen.getByText('Admin')).toBeTruthy();
-  });
-
-  it('hides role badge when showRole is false', () => {
-    render(<EntityCard entity={baseEntity} showRole={false} />);
-    expect(screen.queryByText('Admin')).toBeNull();
-  });
-
-  it('renders member count when showMemberCount is true', () => {
-    render(<EntityCard entity={baseEntity} showMemberCount />);
-    expect(screen.getByText(/5\s+members/)).toBeTruthy();
-  });
-
-  it('shows singular "member" for count of 1', () => {
-    const entity = { ...baseEntity, memberCount: 1 };
-    render(<EntityCard entity={entity} showMemberCount />);
-    expect(screen.getByText(/1\s+member$/)).toBeTruthy();
-  });
-
-  it('calls onPress with entity when pressed', () => {
+  it('calls onPress and reports the click to onTrack', () => {
     const onPress = jest.fn();
-    render(<EntityCard entity={baseEntity} onPress={onPress} />);
-    fireEvent.press(screen.getByRole('button'));
-    expect(onPress).toHaveBeenCalledWith(baseEntity);
-  });
-
-  it('calls onLongPress with entity when long-pressed', () => {
-    const onLongPress = jest.fn();
-    render(<EntityCard entity={baseEntity} onLongPress={onLongPress} />);
-    fireEvent(screen.getByRole('button'), 'longPress');
-    expect(onLongPress).toHaveBeenCalledWith(baseEntity);
-  });
-
-  it('sets selected accessibility state when selected', () => {
-    render(<EntityCard entity={baseEntity} selected onPress={jest.fn()} />);
-    const button = screen.getByRole('button');
-    expect(button.props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: true })
+    const onTrack = jest.fn();
+    render(
+      <EntityCard
+        entity={organization}
+        onPress={onPress}
+        onTrack={onTrack}
+        trackingLabel='list'
+      />
     );
-  });
-
-  it('sets accessibility label with entity name', () => {
-    render(<EntityCard entity={baseEntity} onPress={jest.fn()} />);
-    const button = screen.getByRole('button');
-    expect(button.props.accessibilityLabel).toBe('Entity: Acme Corp');
-  });
-
-  it('renders chevron when onPress is provided', () => {
-    render(<EntityCard entity={baseEntity} onPress={jest.fn()} />);
-    expect(screen.getByText('\u203A')).toBeTruthy();
-  });
-
-  it('does not render chevron when no onPress', () => {
-    render(<EntityCard entity={baseEntity} />);
-    expect(screen.queryByText('\u203A')).toBeNull();
-  });
-
-  it('renders all role types without crashing', () => {
-    const roles = ['owner', 'admin', 'member', 'viewer', 'guest'] as const;
-    roles.forEach(role => {
-      const entity = { ...baseEntity, role };
-      const { unmount } = render(<EntityCard entity={entity} showRole />);
-      expect(screen.getByText('Acme Corp')).toBeTruthy();
-      unmount();
+    fireEvent.press(screen.getByLabelText('Acme Corp, manager'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(onTrack).toHaveBeenCalledWith({
+      action: 'click',
+      trackingLabel: 'list',
+      componentName: 'EntityCard',
     });
+  });
+
+  it('is not a button, and tracks nothing, without onPress', () => {
+    const onTrack = jest.fn();
+    render(<EntityCard entity={organization} onTrack={onTrack} />);
+    const card = screen.getByLabelText('Acme Corp, manager');
+    expect(card.props.accessibilityRole).toBeUndefined();
+    expect(card.props.accessibilityState).toEqual(
+      expect.objectContaining({ disabled: true })
+    );
+    fireEvent.press(card);
+    expect(onTrack).not.toHaveBeenCalled();
+  });
+
+  it('reports itself selected', () => {
+    render(<EntityCard entity={organization} isSelected onPress={jest.fn()} />);
+    expect(
+      screen.getByLabelText('Acme Corp, manager').props.accessibilityState
+    ).toEqual(expect.objectContaining({ selected: true }));
   });
 });

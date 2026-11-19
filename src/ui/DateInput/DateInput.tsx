@@ -26,6 +26,19 @@ export interface DateInputProps {
 }
 
 /**
+ * A date-only string (`YYYY-MM-DD`, what this component emits) read as a
+ * *local* calendar day. `new Date('2026-03-05')` is midnight UTC, which west of
+ * UTC is the evening of the 4th — the field would show the day before the one
+ * chosen.
+ */
+export function parseDateValue(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(value);
+}
+
+/**
  * DateInput Component
  *
  * Date input field that opens a calendar picker.
@@ -70,7 +83,7 @@ export const DateInput: React.FC<DateInputProps> = ({
 
   // Convert value to Date
   const dateValue =
-    value instanceof Date ? value : value ? new Date(value) : null;
+    value instanceof Date ? value : value ? parseDateValue(value) : null;
 
   // Format date for display
   const formatDisplay = (date: Date | null): string => {

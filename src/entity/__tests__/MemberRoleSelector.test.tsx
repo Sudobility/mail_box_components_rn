@@ -1,123 +1,91 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { EntityRole } from '@sudobility/types';
 import { MemberRoleSelector } from '../MemberRoleSelector';
 
 describe('MemberRoleSelector', () => {
-  it('renders the selected role label', () => {
+  it('shows the current role on the trigger', () => {
     render(
-      <MemberRoleSelector selectedRole='admin' onRoleChange={jest.fn()} />
+      <MemberRoleSelector value={EntityRole.MANAGER} onChange={jest.fn()} />
     );
-    expect(screen.getByText('Admin')).toBeTruthy();
+    expect(screen.getByLabelText('Role: Manager')).toBeTruthy();
+    expect(screen.getByText('Manager')).toBeTruthy();
   });
 
-  it('renders role description when showDescriptions is true', () => {
+  it('offers the three roles the platform has, with what each grants', () => {
+    render(
+      <MemberRoleSelector value={EntityRole.MEMBER} onChange={jest.fn()} />
+    );
+    fireEvent.press(screen.getByLabelText('Role: Member'));
+    expect(screen.getByText('Roles')).toBeTruthy();
+    expect(
+      screen.getByLabelText('Owner: Full access to all settings and members')
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('Manager: Can manage projects and API keys')
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Member: Read-only access')).toBeTruthy();
+  });
+
+  it('marks the current role as selected in the menu', () => {
+    render(
+      <MemberRoleSelector value={EntityRole.MEMBER} onChange={jest.fn()} />
+    );
+    fireEvent.press(screen.getByLabelText('Role: Member'));
+    expect(
+      screen.getByLabelText('Member: Read-only access').props.accessibilityState
+    ).toEqual(expect.objectContaining({ selected: true }));
+    expect(
+      screen.getByLabelText('Manager: Can manage projects and API keys').props
+        .accessibilityState
+    ).toEqual(expect.objectContaining({ selected: false }));
+  });
+
+  it('reports the chosen role, tracks it, and closes', () => {
+    const onChange = jest.fn();
+    const onTrack = jest.fn();
     render(
       <MemberRoleSelector
-        selectedRole='admin'
-        onRoleChange={jest.fn()}
-        showDescriptions
+        value={EntityRole.MEMBER}
+        onChange={onChange}
+        onTrack={onTrack}
       />
     );
-    expect(screen.getByText('Can manage members and settings')).toBeTruthy();
-  });
-
-  it('has correct accessibility label for trigger', () => {
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={jest.fn()} />
+    fireEvent.press(screen.getByLabelText('Role: Member'));
+    fireEvent.press(
+      screen.getByLabelText('Manager: Can manage projects and API keys')
     );
-    const trigger = screen.getByLabelText('Selected role: Member');
-    expect(trigger).toBeTruthy();
+    expect(onChange).toHaveBeenCalledWith(EntityRole.MANAGER);
+    expect(onTrack.mock.calls.map(call => call[0].action)).toEqual([
+      'toggle',
+      'select',
+    ]);
+    expect(screen.queryByText('Roles')).toBeNull();
   });
 
-  it('opens modal when trigger is pressed', () => {
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={jest.fn()} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    expect(screen.getByText('Select Role')).toBeTruthy();
-  });
-
-  it('does not open modal when disabled', () => {
+  it('does not open when disabled', () => {
+    const onTrack = jest.fn();
     render(
       <MemberRoleSelector
-        selectedRole='member'
-        onRoleChange={jest.fn()}
+        value={EntityRole.MEMBER}
+        onChange={jest.fn()}
+        onTrack={onTrack}
         disabled
       />
     );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    expect(screen.queryByText('Select Role')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Role: Member'));
+    expect(screen.queryByText('Roles')).toBeNull();
+    expect(onTrack).not.toHaveBeenCalled();
   });
 
-  it('shows only available roles in modal', () => {
+  it('closes on Cancel without changing the role', () => {
+    const onChange = jest.fn();
     render(
-      <MemberRoleSelector
-        selectedRole='member'
-        onRoleChange={jest.fn()}
-        availableRoles={['member', 'viewer']}
-      />
+      <MemberRoleSelector value={EntityRole.MEMBER} onChange={onChange} />
     );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    // Should show member and viewer
-    expect(screen.getByLabelText(/^Member:/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Viewer:/)).toBeTruthy();
-    // Should not show admin, owner, or guest
-    expect(screen.queryByLabelText(/^Admin:/)).toBeNull();
-    expect(screen.queryByLabelText(/^Owner:/)).toBeNull();
-    expect(screen.queryByLabelText(/^Guest:/)).toBeNull();
-  });
-
-  it('calls onRoleChange when a role is selected', () => {
-    const onRoleChange = jest.fn();
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={onRoleChange} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    fireEvent.press(screen.getByLabelText(/^Viewer:/));
-    expect(onRoleChange).toHaveBeenCalledWith('viewer');
-  });
-
-  it('closes modal after selecting a role', () => {
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={jest.fn()} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    expect(screen.getByText('Select Role')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText(/^Viewer:/));
-    expect(screen.queryByText('Select Role')).toBeNull();
-  });
-
-  it('closes modal when Cancel is pressed', () => {
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={jest.fn()} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    expect(screen.getByText('Select Role')).toBeTruthy();
-    fireEvent.press(screen.getByText('Cancel'));
-    expect(screen.queryByText('Select Role')).toBeNull();
-  });
-
-  it('shows checkmark next to the currently selected role', () => {
-    render(
-      <MemberRoleSelector selectedRole='admin' onRoleChange={jest.fn()} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Admin'));
-    // The admin option should have selected state
-    const adminOption = screen.getByLabelText(/^Admin:/);
-    expect(adminOption.props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: true })
-    );
-  });
-
-  it('defaults availableRoles to admin, member, viewer, guest', () => {
-    render(
-      <MemberRoleSelector selectedRole='member' onRoleChange={jest.fn()} />
-    );
-    fireEvent.press(screen.getByLabelText('Selected role: Member'));
-    expect(screen.getByLabelText(/^Admin:/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Member:/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Viewer:/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Guest:/)).toBeTruthy();
-    expect(screen.queryByLabelText(/^Owner:/)).toBeNull();
+    fireEvent.press(screen.getByLabelText('Role: Member'));
+    fireEvent.press(screen.getByLabelText('Cancel'));
+    expect(screen.queryByText('Roles')).toBeNull();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

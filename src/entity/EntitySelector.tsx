@@ -1,148 +1,172 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, FlatList, Image } from 'react-native';
-import { cn } from '../index';
-import type { EntitySelectorProps, Entity } from './types';
-import { pressProps } from '../index';
+import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { EntityWithRole } from '@sudobility/types';
+import { cn, pressProps } from '../index';
+import {
+  BuildingOffice2Icon,
+  CheckIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  UserIcon,
+} from './icons';
+
+/** Tracking data for EntitySelector actions */
+export interface EntitySelectorTrackingData {
+  action: 'toggle' | 'select' | 'create_new';
+  trackingLabel?: string;
+  componentName?: string;
+}
+
+export interface EntitySelectorProps {
+  /** Available entities */
+  entities: EntityWithRole[];
+  /** Currently selected entity */
+  currentEntity: EntityWithRole | null;
+  /** Selection handler */
+  onSelect: (entity: EntityWithRole) => void;
+  /** Handler for creating a new organization */
+  onCreateNew?: () => void;
+  /** Whether data is loading */
+  isLoading?: boolean;
+  /** Additional class names */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+  /** Optional tracking callback */
+  onTrack?: (data: EntitySelectorTrackingData) => void;
+  /** Optional tracking label */
+  trackingLabel?: string;
+  /** Optional component name for tracking */
+  componentName?: string;
+}
 
 /**
- * EntitySelector - Dropdown/Pressable selector for switching entities
+ * EntitySelector - Selector for switching between entities: the personal
+ * workspace, then the organizations, then "Create organization".
+ *
+ * RN counterpart of the web's `EntitySelector` dropdown; the menu is a modal
+ * here.
  */
 export const EntitySelector: React.FC<EntitySelectorProps> = ({
   entities,
-  selectedEntity,
+  currentEntity,
   onSelect,
-  placeholder = 'Select an entity',
-  disabled = false,
-  loading = false,
-  showAvatars = true,
-  showRoles = false,
-  className = '',
+  onCreateNew,
+  isLoading = false,
+  className,
   style,
   testID,
+  onTrack,
+  trackingLabel,
+  componentName = 'EntitySelector',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleOpen = () => {
-    if (!disabled && !loading) {
-      setIsOpen(true);
-    }
+  const personalEntities = entities.filter(e => e.entityType === 'personal');
+  const organizationEntities = entities.filter(
+    e => e.entityType === 'organization'
+  );
+
+  const handleToggle = () => {
+    onTrack?.({ action: 'toggle', trackingLabel, componentName });
+    setIsOpen(!isOpen);
   };
 
   const handleClose = () => {
     setIsOpen(false);
   };
 
-  const handleSelect = (entity: Entity) => {
+  const handleSelect = (entity: EntityWithRole) => {
+    onTrack?.({ action: 'select', trackingLabel, componentName });
     onSelect(entity);
-    handleClose();
+    setIsOpen(false);
   };
 
-  const renderAvatar = (entity: Entity, size: 'sm' | 'md' = 'md') => {
-    const sizeClasses = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
-    const textSize = size === 'sm' ? 'text-sm' : 'text-base';
+  const handleCreateNew = () => {
+    onTrack?.({ action: 'create_new', trackingLabel, componentName });
+    onCreateNew?.();
+    setIsOpen(false);
+  };
 
-    if (entity.avatarUrl) {
-      return (
-        <Image
-          source={{ uri: entity.avatarUrl }}
-          className={cn(sizeClasses, 'rounded-full bg-muted dark:bg-muted')}
-          accessibilityIgnoresInvertColors
-        />
-      );
-    }
-
+  const renderItem = (entity: EntityWithRole) => {
+    const isPersonal = entity.entityType === 'personal';
+    const Icon = isPersonal ? UserIcon : BuildingOffice2Icon;
+    const isSelected = entity.id === currentEntity?.id;
     return (
-      <View
+      <Pressable
+        key={entity.id}
+        {...pressProps(() => handleSelect(entity))}
         className={cn(
-          sizeClasses,
-          'rounded-full bg-muted dark:bg-muted items-center justify-center'
+          'flex-row items-center gap-2 rounded px-2 py-2.5',
+          isSelected ? 'bg-primary/10' : 'active:bg-muted'
         )}
+        accessibilityRole='button'
+        accessibilityLabel={`Select ${entity.displayName}`}
+        accessibilityState={{ selected: isSelected }}
       >
-        <Text className={cn(textSize, 'font-semibold text-muted-foreground')}>
-          {entity.name.charAt(0).toUpperCase()}
+        <Icon
+          size={16}
+          className={isPersonal ? 'text-primary' : 'text-accent-foreground'}
+        />
+        <Text
+          className={cn(
+            'flex-1 text-sm',
+            isSelected ? 'text-primary' : 'text-foreground'
+          )}
+          numberOfLines={1}
+        >
+          {entity.displayName}
         </Text>
-      </View>
+        {isSelected ? <CheckIcon size={16} className='text-primary' /> : null}
+      </Pressable>
     );
   };
-
-  const renderItem = ({ item }: { item: Entity }) => (
-    <Pressable
-      {...pressProps(() => handleSelect(item))}
-      className={cn(
-        'flex-row items-center px-4 py-3',
-        selectedEntity?.id === item.id && 'bg-primary/10',
-        'active:bg-muted'
-      )}
-      accessibilityRole='button'
-      accessibilityLabel={`Select ${item.name}`}
-      accessibilityState={{ selected: selectedEntity?.id === item.id }}
-    >
-      {showAvatars && <View className='mr-3'>{renderAvatar(item, 'sm')}</View>}
-      <View className='flex-1'>
-        <Text className='text-base text-foreground' numberOfLines={1}>
-          {item.name}
-        </Text>
-        {showRoles && item.role && (
-          <Text className='text-xs text-muted-foreground capitalize'>
-            {item.role}
-          </Text>
-        )}
-      </View>
-      {selectedEntity?.id === item.id && (
-        <Text className='text-primary dark:text-primary text-lg'>✓</Text>
-      )}
-    </Pressable>
-  );
 
   return (
     <View className={className} style={style} testID={testID}>
       {/* Trigger Button */}
       <Pressable
-        {...pressProps(handleOpen, disabled || loading)}
-        disabled={disabled || loading}
+        {...pressProps(handleToggle, isLoading)}
+        disabled={isLoading}
         className={cn(
-          'flex-row items-center px-4 py-3 rounded-xl',
-          'bg-card',
-          'border border-border',
-          disabled && 'opacity-50',
-          'active:opacity-80'
+          'flex-row items-center gap-2 self-start rounded-lg border border-border bg-background px-3 py-2',
+          isLoading ? 'opacity-50' : 'active:bg-muted'
         )}
         accessibilityRole='button'
         accessibilityLabel={
-          selectedEntity ? `Selected: ${selectedEntity.name}` : placeholder
+          currentEntity
+            ? `Workspace: ${currentEntity.displayName}`
+            : 'Select workspace'
         }
-        accessibilityState={{ disabled }}
+        accessibilityState={{ disabled: isLoading, expanded: isOpen }}
       >
-        {loading ? (
-          <View className='flex-row items-center'>
-            <Text className='text-muted-foreground'>Loading...</Text>
-          </View>
-        ) : selectedEntity ? (
+        {currentEntity ? (
           <>
-            {showAvatars && (
-              <View className='mr-3'>{renderAvatar(selectedEntity)}</View>
+            {currentEntity.entityType === 'personal' ? (
+              <UserIcon size={16} className='text-primary' />
+            ) : (
+              <BuildingOffice2Icon
+                size={16}
+                className='text-accent-foreground'
+              />
             )}
-            <View className='flex-1'>
-              <Text
-                className='text-base font-medium text-foreground'
-                numberOfLines={1}
-              >
-                {selectedEntity.name}
-              </Text>
-              {showRoles && selectedEntity.role && (
-                <Text className='text-xs text-muted-foreground capitalize'>
-                  {selectedEntity.role}
-                </Text>
-              )}
-            </View>
+            <Text
+              className='max-w-[150px] text-sm font-medium text-foreground'
+              numberOfLines={1}
+            >
+              {currentEntity.displayName}
+            </Text>
           </>
         ) : (
-          <Text className='flex-1 text-muted-foreground'>{placeholder}</Text>
+          <Text className='text-sm text-muted-foreground'>
+            Select workspace
+          </Text>
         )}
-        <Text className='text-muted-foreground text-lg ml-2'>▼</Text>
+        <ChevronDownIcon size={16} className='text-muted-foreground' />
       </Pressable>
 
-      {/* Dropdown Modal */}
+      {/* Menu */}
       <Modal
         visible={isOpen}
         transparent
@@ -151,45 +175,54 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
       >
         <Pressable
           {...pressProps(handleClose)}
-          className='flex-1 bg-black/50 justify-center px-4'
+          className='flex-1 justify-center bg-black/50 px-4'
         >
           <Pressable
             /* no-a11y-tap: swallows a press on the panel so it does not reach the scrim behind it. Not a control, and there is no gesture behind an assistive activation to stop. */
             onPress={e => e.stopPropagation()}
-            className='bg-card rounded-2xl overflow-hidden max-h-96'
+            className='max-h-96 overflow-hidden rounded-lg border border-border bg-popover'
           >
-            {/* Header */}
-            <View className='px-4 py-3 border-b border-border'>
-              <Text className='text-lg font-semibold text-foreground'>
-                Select Entity
-              </Text>
-            </View>
+            <ScrollView bounces={false}>
+              <View className='p-1'>
+                {/* Personal entities */}
+                {personalEntities.map(renderItem)}
 
-            {/* List */}
-            <FlatList
-              data={entities}
-              renderItem={renderItem}
-              keyExtractor={(item: Entity) => item.id}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View className='py-8 items-center'>
-                  <Text className='text-muted-foreground'>
-                    No entities available
-                  </Text>
-                </View>
-              }
-            />
+                {/* Divider */}
+                {personalEntities.length > 0 &&
+                  organizationEntities.length > 0 && (
+                    <View className='my-1 h-px bg-border' />
+                  )}
+
+                {/* Organization entities */}
+                {organizationEntities.map(renderItem)}
+
+                {/* Create new */}
+                {onCreateNew && (
+                  <>
+                    <View className='my-1 h-px bg-border' />
+                    <Pressable
+                      {...pressProps(handleCreateNew)}
+                      className='flex-row items-center gap-2 rounded px-2 py-2.5 active:bg-muted'
+                      accessibilityRole='button'
+                    >
+                      <PlusIcon size={16} className='text-primary' />
+                      <Text className='text-sm text-primary'>
+                        Create organization
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            </ScrollView>
 
             {/* Cancel Button */}
             <Pressable
               {...pressProps(handleClose)}
               accessibilityRole='button'
               accessibilityLabel='Cancel'
-              className='px-4 py-3 border-t border-border items-center active:bg-muted'
+              className='items-center border-t border-border px-4 py-3 active:bg-muted'
             >
-              <Text className='text-primary dark:text-primary font-medium'>
-                Cancel
-              </Text>
+              <Text className='text-base font-medium text-primary'>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>

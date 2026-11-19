@@ -138,7 +138,10 @@ export const FormModal: React.FC<FormModalProps> = props => {
       // A full-screen panel comes up from the bottom like a native modal; a
       // dialog fades, since sliding a whole overlay up reads wrong.
       animationType={presentation === 'fullScreen' ? 'slide' : 'fade'}
-      onRequestClose={props.onClose}
+      // Hardware Back (and a swipe-down) must not abandon a save in flight —
+      // the close button and the scrim are already guarded the same way, as
+      // the web's Escape handler is.
+      onRequestClose={props.saving ? undefined : props.onClose}
       presentation={presentation}
     >
       {/* ModalHost re-provides the SafeAreaProvider a detached view tree

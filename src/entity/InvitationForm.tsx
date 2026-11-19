@@ -6,168 +6,164 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { cn } from '../index';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { colors } from '@sudobility/design';
-import type { InvitationFormProps, EntityRole } from './types';
+import { EntityRole, type InviteMemberRequest } from '@sudobility/types';
+import { cn, pressProps } from '../index';
 import { MemberRoleSelector } from './MemberRoleSelector';
-import { pressProps } from '../index';
+import { EnvelopeIcon, PaperAirplaneIcon } from './icons';
+
+/** Tracking data for InvitationForm actions */
+export interface InvitationFormTrackingData {
+  action: 'submit';
+  trackingLabel?: string;
+  componentName?: string;
+}
+
+export interface InvitationFormProps {
+  /** Submit handler; a rejection is shown as the form's error */
+  onSubmit: (request: InviteMemberRequest) => Promise<void>;
+  /** Whether submission is in progress */
+  isSubmitting?: boolean;
+  /** Default role for new invitations */
+  defaultRole?: EntityRole;
+  /** Additional class names */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+  /** Optional tracking callback */
+  onTrack?: (data: InvitationFormTrackingData) => void;
+  /** Optional tracking label */
+  trackingLabel?: string;
+  /** Optional component name for tracking */
+  componentName?: string;
+}
+
+/** Validate email format */
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 /**
- * Validate email format
- */
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-/**
- * InvitationForm - Form for inviting members with email input and role selector
+ * InvitationForm - Email, role and a send button, for inviting a member.
+ *
+ * RN counterpart of the web's `InvitationForm`: the same validation and the
+ * same messages, with a failed send shown inline under the fields. The web
+ * lays the three controls out in one row; a phone has no room for that, so the
+ * email field takes a row of its own.
  */
 export const InvitationForm: React.FC<InvitationFormProps> = ({
   onSubmit,
-  availableRoles = ['admin', 'member', 'viewer', 'guest'],
-  defaultRole = 'member',
-  loading = false,
-  disabled = false,
-  placeholder = 'Enter email address',
-  submitLabel = 'Send Invitation',
-  className = '',
+  isSubmitting = false,
+  defaultRole = EntityRole.MEMBER,
+  className,
   style,
   testID,
+  onTrack,
+  trackingLabel,
+  componentName = 'InvitationForm',
 }) => {
   const [email, setEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState<EntityRole>(defaultRole);
+  const [role, setRole] = useState<EntityRole>(defaultRole);
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (error) {
-      setError(null);
-    }
-  };
+  const cannotSubmit = isSubmitting || !email.trim();
 
   const handleSubmit = async () => {
-    // Validate email
-    const trimmedEmail = email.trim();
+    setError(null);
 
-    if (!trimmedEmail) {
-      setError('Email address is required');
+    if (!email.trim()) {
+      setError('Email is required');
       return;
     }
 
-    if (!isValidEmail(trimmedEmail)) {
+    if (!isValidEmail(email.trim())) {
       setError('Please enter a valid email address');
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    onTrack?.({ action: 'submit', trackingLabel, componentName });
 
     try {
-      await onSubmit(trimmedEmail, selectedRole);
-      // Clear form on success
+      await onSubmit({ email: email.trim(), role });
       setEmail('');
-      setSelectedRole(defaultRole);
+      setRole(defaultRole);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to send invitation'
+        (err as { message?: string } | null)?.message ||
+          'Failed to send invitation'
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const isDisabled = disabled || loading || isSubmitting;
-  const canSubmit = email.trim().length > 0 && !isDisabled;
-
   return (
-    <View className={cn(className)} style={style} testID={testID}>
+    <View className={cn('gap-3', className)} style={style} testID={testID}>
       {/* Email Input */}
-      <View className='mb-4'>
-        <Text className='text-sm font-medium text-muted-foreground mb-2'>
-          Email Address
-        </Text>
+      <View
+        className={cn(
+          'flex-row items-center gap-2 rounded-lg border bg-background px-3',
+          error ? 'border-destructive' : 'border-border',
+          isSubmitting && 'opacity-50'
+        )}
+      >
+        <EnvelopeIcon size={16} className='text-muted-foreground' />
         <TextInput
           value={email}
           /* Android's fullscreen extract mode off — the package rule; see
-             components-rn's `lib/text-input.ts`. */
+             `lib/text-input.ts`. */
           disableFullscreenUI
-          onChangeText={handleEmailChange}
-          placeholder={placeholder}
+          onChangeText={setEmail}
+          placeholder='Enter email address'
           placeholderTextColor={colors.raw.neutral[400]}
+          editable={!isSubmitting}
           keyboardType='email-address'
           autoCapitalize='none'
           autoCorrect={false}
           autoComplete='email'
-          editable={!isDisabled}
-          className={cn(
-            'px-4 py-3 rounded-xl',
-            'bg-card',
-            'border',
-            error ? 'border-destructive' : 'border-border',
-            'text-foreground',
-            isDisabled && 'opacity-50'
-          )}
-          accessibilityLabel='Email address input'
-          accessibilityHint='Enter the email address of the person you want to invite'
+          returnKeyType='send'
+          onSubmitEditing={handleSubmit}
+          className='flex-1 py-2 text-sm text-foreground'
+          accessibilityLabel='Email address'
         />
-        {error && (
-          <Text className='text-sm text-destructive  mt-1'>{error}</Text>
-        )}
       </View>
 
-      {/* Role Selector */}
-      <View className='mb-4'>
-        <Text className='text-sm font-medium text-muted-foreground mb-2'>
-          Role
-        </Text>
+      <View className='flex-row items-center justify-between gap-2'>
+        {/* Role Selector */}
         <MemberRoleSelector
-          selectedRole={selectedRole}
-          onRoleChange={setSelectedRole}
-          availableRoles={availableRoles}
-          disabled={isDisabled}
-          showDescriptions
+          value={role}
+          onChange={setRole}
+          disabled={isSubmitting}
         />
+
+        {/* Submit Button */}
+        <Pressable
+          {...pressProps(handleSubmit, cannotSubmit)}
+          disabled={cannotSubmit}
+          className={cn(
+            'flex-row items-center gap-2 rounded-lg bg-primary px-4 py-2 active:opacity-80',
+            cannotSubmit && 'opacity-50'
+          )}
+          accessibilityRole='button'
+          accessibilityLabel='Send invitation'
+          accessibilityState={{ disabled: cannotSubmit, busy: isSubmitting }}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size='small' />
+          ) : (
+            <PaperAirplaneIcon size={16} className='text-primary-foreground' />
+          )}
+          <Text className='text-sm font-medium text-primary-foreground'>
+            Invite
+          </Text>
+        </Pressable>
       </View>
 
-      {/* Submit Button */}
-      <Pressable
-        {...pressProps(handleSubmit, !canSubmit)}
-        disabled={!canSubmit}
-        className={cn(
-          'flex-row items-center justify-center px-6 py-4 rounded-xl',
-          canSubmit
-            ? 'bg-primary dark:bg-primary active:bg-primary dark:active:bg-primary/90'
-            : 'bg-muted dark:bg-muted'
-        )}
-        accessibilityRole='button'
-        accessibilityLabel={submitLabel}
-        accessibilityState={{ disabled: !canSubmit }}
-      >
-        {isSubmitting ? (
-          <>
-            <ActivityIndicator size='small' color={colors.raw.neutral[0]} />
-            <Text className='text-primary-foreground font-semibold ml-2'>
-              Sending...
-            </Text>
-          </>
-        ) : (
-          <Text
-            className={cn(
-              'font-semibold',
-              canSubmit ? 'text-primary-foreground' : 'text-muted-foreground'
-            )}
-          >
-            {submitLabel}
-          </Text>
-        )}
-      </Pressable>
-
-      {/* Help Text */}
-      <Text className='text-xs text-muted-foreground mt-3 text-center'>
-        The invitee will receive an email with instructions to join.
-      </Text>
+      {/* Error Message */}
+      {error ? (
+        <Text className='text-sm text-destructive' accessibilityRole='alert'>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 };

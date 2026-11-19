@@ -1,252 +1,211 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  Image,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import { cn } from '../index';
-import { colors } from '@sudobility/design';
-import type { MemberListProps, Member, EntityRole } from './types';
-import { DEFAULT_ROLE_CONFIGS } from './types';
-import { pressProps } from '../index';
+import { View, Text, Pressable } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { EntityMember, EntityRole } from '@sudobility/types';
+import { cn, pressProps } from '../index';
+import { MemberRoleSelector } from './MemberRoleSelector';
+import { RoleBadge } from './RoleBadge';
+import { TrashIcon, UserIcon } from './icons';
+
+/** Tracking data for MemberList actions */
+export interface MemberListTrackingData {
+  action: 'role_change' | 'remove';
+  trackingLabel?: string;
+  componentName?: string;
+}
+
+export interface MemberListProps {
+  /** Members to display */
+  members: EntityMember[];
+  /** Current user's ID (to identify self) */
+  currentUserId?: string;
+  /** Whether current user can manage members */
+  canManage?: boolean;
+  /**
+   * Role change handler. As on the web, `memberId` is the member's **user id**
+   * (`member.userId`) — the API keys members by user.
+   */
+  onRoleChange?: (memberId: string, role: EntityRole) => void;
+  /** Remove member handler; `memberId` is the member's user id, as above */
+  onRemove?: (memberId: string) => void;
+  /** Whether data is loading */
+  isLoading?: boolean;
+  /** Empty state message */
+  emptyMessage?: string;
+  /** Additional class names */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+  /** Optional tracking callback */
+  onTrack?: (data: MemberListTrackingData) => void;
+  /** Optional tracking label */
+  trackingLabel?: string;
+  /** Optional component name for tracking */
+  componentName?: string;
+}
 
 /**
- * Get role badge color classes
- */
-const getRoleBadgeClasses = (role: EntityRole): string => {
-  const colorMap: Record<EntityRole, string> = {
-    owner: 'bg-accent  text-accent-foreground ',
-    admin: 'bg-primary/10  text-primary dark:text-primary-foreground',
-    member: 'bg-success/10  text-success',
-    viewer: 'bg-muted text-foreground',
-    guest: 'bg-warning/10  text-warning ',
-  };
-  return colorMap[role] || colorMap.member;
-};
-
-/**
- * Get role label
- */
-const getRoleLabel = (role: EntityRole): string => {
-  const config = DEFAULT_ROLE_CONFIGS.find(c => c.role === role);
-  return config?.label || role;
-};
-
-/**
- * Get status indicator color
- */
-const getStatusColor = (status?: string): string => {
-  switch (status) {
-    case 'active':
-      return 'bg-success';
-    case 'inactive':
-      return 'bg-muted';
-    case 'pending':
-      return 'bg-warning';
-    default:
-      return 'bg-success';
-  }
-};
-
-/**
- * MemberList - List of entity members with role badges
+ * MemberList - The members of an entity as one bordered, divided list: avatar,
+ * name and email, then the role — a selector for someone who can manage it, a
+ * badge otherwise — and a remove control.
+ *
+ * RN counterpart of the web's `MemberList`. A plain column, not a scroller:
+ * the host page scrolls, as on the web.
  */
 export const MemberList: React.FC<MemberListProps> = ({
   members,
-  onMemberPress,
+  currentUserId,
+  canManage = false,
   onRoleChange,
-  onRemoveMember,
-  currentUserRole,
-  canEditRoles = false,
-  canRemoveMembers = false,
+  onRemove,
+  isLoading = false,
   emptyMessage = 'No members found',
-  emptyIcon,
-  loading = false,
-  refreshing = false,
-  onRefresh,
-  ListHeaderComponent,
-  ListFooterComponent,
-  className = '',
+  className,
   style,
   testID,
+  onTrack,
+  trackingLabel,
+  componentName = 'MemberList',
 }) => {
-  const canEditMember = (member: Member): boolean => {
-    if (!canEditRoles) return false;
-    if (!currentUserRole) return false;
-
-    // Owners can edit anyone except other owners
-    if (currentUserRole === 'owner' && member.role !== 'owner') return true;
-
-    // Admins can edit members, viewers, and guests
-    if (
-      currentUserRole === 'admin' &&
-      ['member', 'viewer', 'guest'].includes(member.role)
-    )
-      return true;
-
-    return false;
-  };
-
-  const canRemoveMember = (member: Member): boolean => {
-    if (!canRemoveMembers) return false;
-    if (!currentUserRole) return false;
-
-    // Cannot remove owners
-    if (member.role === 'owner') return false;
-
-    // Owners can remove anyone except other owners
-    if (currentUserRole === 'owner') return true;
-
-    // Admins can remove members, viewers, and guests
-    if (
-      currentUserRole === 'admin' &&
-      ['member', 'viewer', 'guest'].includes(member.role)
-    )
-      return true;
-
-    return false;
-  };
-
-  const renderItem = ({ item }: { item: Member }) => (
-    <Pressable
-      {...pressProps(() => onMemberPress?.(item), !onMemberPress)}
-      disabled={!onMemberPress}
-      className={cn(
-        'flex-row items-center p-4 rounded-xl mb-3',
-        'bg-card',
-        'border border-border',
-        'active:opacity-80'
-      )}
-      accessibilityRole='button'
-      accessibilityLabel={`Member: ${item.name}, Role: ${item.role}`}
-      accessibilityState={{ disabled: !onMemberPress }}
-    >
-      {/* Avatar with status indicator */}
-      <View className='mr-3 relative'>
-        {item.avatarUrl ? (
-          <Image
-            source={{ uri: item.avatarUrl }}
-            className='w-12 h-12 rounded-full bg-muted dark:bg-muted'
-            accessibilityIgnoresInvertColors
-          />
-        ) : (
-          <View className='w-12 h-12 rounded-full bg-muted dark:bg-muted items-center justify-center'>
-            <Text className='text-lg font-semibold text-muted-foreground'>
-              {item.name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
-        {/* Status indicator */}
-        <View
-          className={cn(
-            'absolute bottom-0 right-0 w-3 h-3 rounded-full',
-            getStatusColor(item.status),
-            'border-2 border-background '
-          )}
-        />
-      </View>
-
-      {/* Content */}
-      <View className='flex-1'>
-        <View className='flex-row items-center flex-wrap'>
-          <Text
-            className='text-base font-semibold text-foreground mr-2'
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
-          <View
-            className={cn(
-              'px-2 py-0.5 rounded-full',
-              getRoleBadgeClasses(item.role)
-            )}
-          >
-            <Text className='text-xs font-medium'>
-              {getRoleLabel(item.role)}
-            </Text>
-          </View>
-        </View>
-        <Text className='text-sm text-muted-foreground' numberOfLines={1}>
-          {item.email}
-        </Text>
-        {item.joinedAt && (
-          <Text className='text-xs text-muted-foreground mt-1'>
-            Joined {new Date(item.joinedAt).toLocaleDateString()}
-          </Text>
-        )}
-      </View>
-
-      {/* Actions */}
-      <View className='flex-row items-center ml-2'>
-        {canEditMember(item) && onRoleChange && (
-          <Pressable
-            {...pressProps(() => {})}
-            className='p-2 mr-1 active:opacity-60'
-            accessibilityRole='button'
-            accessibilityLabel='Edit role'
-          >
-            <Text className='text-primary dark:text-primary text-sm'>Edit</Text>
-          </Pressable>
-        )}
-        {canRemoveMember(item) && onRemoveMember && (
-          <Pressable
-            {...pressProps(() => onRemoveMember(item))}
-            className='p-2 active:opacity-60'
-            accessibilityRole='button'
-            accessibilityLabel='Remove member'
-          >
-            <Text className='text-destructive  text-sm'>Remove</Text>
-          </Pressable>
-        )}
-      </View>
-    </Pressable>
-  );
-
-  const renderEmpty = () => {
-    if (loading) {
-      return (
-        <View className='flex-1 items-center justify-center py-12'>
-          <ActivityIndicator size='large' color={colors.raw.blue[500]} />
-          <Text className='text-muted-foreground mt-4'>Loading...</Text>
-        </View>
-      );
-    }
-
+  if (isLoading) {
     return (
-      <View className='flex-1 items-center justify-center py-12'>
-        {emptyIcon}
-        <Text className='text-muted-foreground text-center mt-2'>
+      <View
+        className={cn('gap-2', className)}
+        style={style}
+        testID={testID}
+        accessible
+        accessibilityRole='progressbar'
+        accessibilityLabel='Loading members'
+      >
+        {[1, 2, 3].map(i => (
+          <View
+            key={i}
+            className='h-16 rounded-lg border border-border bg-muted'
+          />
+        ))}
+      </View>
+    );
+  }
+
+  if (members.length === 0) {
+    return (
+      <View className={cn('py-8', className)} style={style} testID={testID}>
+        <Text className='text-center text-base text-muted-foreground'>
           {emptyMessage}
         </Text>
       </View>
     );
+  }
+
+  const handleRoleChange = (memberId: string, role: EntityRole) => {
+    onTrack?.({ action: 'role_change', trackingLabel, componentName });
+    onRoleChange?.(memberId, role);
+  };
+
+  const handleRemove = (memberId: string) => {
+    onTrack?.({ action: 'remove', trackingLabel, componentName });
+    onRemove?.(memberId);
   };
 
   return (
-    <View className={cn('flex-1', className)} style={style} testID={testID}>
-      <FlatList
-        data={members}
-        renderItem={renderItem}
-        keyExtractor={(item: Member) => item.id}
-        ListHeaderComponent={ListHeaderComponent}
-        ListFooterComponent={ListFooterComponent}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.raw.blue[500]}
-            />
-          ) : undefined
-        }
-      />
+    <View
+      className={cn(
+        'overflow-hidden rounded-lg border border-border',
+        className
+      )}
+      style={style}
+      testID={testID}
+    >
+      {members.map((member, index) => (
+        <MemberRow
+          key={member.id}
+          member={member}
+          first={index === 0}
+          isSelf={member.userId === currentUserId}
+          canManage={canManage}
+          onRoleChange={onRoleChange ? handleRoleChange : undefined}
+          onRemove={onRemove ? handleRemove : undefined}
+        />
+      ))}
+    </View>
+  );
+};
+
+interface MemberRowProps {
+  member: EntityMember;
+  first: boolean;
+  isSelf: boolean;
+  canManage: boolean;
+  onRoleChange?: (memberId: string, role: EntityRole) => void;
+  onRemove?: (memberId: string) => void;
+}
+
+const MemberRow: React.FC<MemberRowProps> = ({
+  member,
+  first,
+  isSelf,
+  canManage,
+  onRoleChange,
+  onRemove,
+}) => {
+  const displayName =
+    member.user?.displayName || member.user?.email || 'Unknown user';
+  const email = member.user?.email;
+
+  return (
+    <View
+      className={cn(
+        'flex-row items-center gap-3 p-3',
+        !first && 'border-t border-border'
+      )}
+    >
+      {/* Avatar */}
+      <View className='h-10 w-10 items-center justify-center rounded-full bg-muted'>
+        <UserIcon size={20} className='text-muted-foreground' />
+      </View>
+
+      {/* Info */}
+      <View className='min-w-0 flex-1'>
+        <View className='flex-row items-center gap-2'>
+          <Text
+            className='shrink text-base font-medium text-foreground'
+            numberOfLines={1}
+          >
+            {displayName}
+          </Text>
+          {isSelf ? (
+            <Text className='text-xs text-muted-foreground'>(you)</Text>
+          ) : null}
+        </View>
+        {email ? (
+          <Text className='text-sm text-muted-foreground' numberOfLines={1}>
+            {email}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Role */}
+      {canManage && onRoleChange && !isSelf ? (
+        <MemberRoleSelector
+          value={member.role}
+          onChange={role => onRoleChange(member.userId, role)}
+        />
+      ) : (
+        <RoleBadge role={member.role} className='py-1' />
+      )}
+
+      {/* Actions */}
+      {canManage && onRemove && !isSelf ? (
+        <Pressable
+          {...pressProps(() => onRemove(member.userId))}
+          accessibilityRole='button'
+          accessibilityLabel={`Remove ${displayName}`}
+          hitSlop={8}
+          className='rounded p-1.5 active:bg-destructive/10'
+        >
+          <TrashIcon size={18} className='text-muted-foreground' />
+        </Pressable>
+      ) : null}
     </View>
   );
 };

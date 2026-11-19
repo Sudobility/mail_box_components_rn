@@ -1,94 +1,106 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, Text } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { EntityWithRole } from '@sudobility/types';
 import { cn } from '../index';
-import { colors } from '@sudobility/design';
-import type { EntityListProps, Entity } from './types';
-import { EntityCard } from './EntityCard';
+import { EntityCard, type EntityCardTrackingData } from './EntityCard';
+
+/** Tracking data for EntityList actions */
+export interface EntityListTrackingData {
+  action: 'select';
+  trackingLabel?: string;
+  componentName?: string;
+}
+
+export interface EntityListProps {
+  /** Entities to display */
+  entities: EntityWithRole[];
+  /** Currently selected entity slug */
+  selectedSlug?: string | null;
+  /** Selection handler */
+  onSelect?: (entity: EntityWithRole) => void;
+  /** Whether data is loading */
+  isLoading?: boolean;
+  /** Empty state message */
+  emptyMessage?: string;
+  /** Additional class names */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+  /** Optional tracking callback */
+  onTrack?: (data: EntityListTrackingData | EntityCardTrackingData) => void;
+  /** Optional tracking label */
+  trackingLabel?: string;
+  /** Optional component name for tracking */
+  componentName?: string;
+}
 
 /**
- * EntityList - List of EntityCards
+ * EntityList - A column of EntityCards.
+ *
+ * RN counterpart of the web's `EntityList`. It is a plain column, not a
+ * scroller: the host page scrolls, as on the web.
  */
 export const EntityList: React.FC<EntityListProps> = ({
   entities,
-  onEntityPress,
-  onEntityLongPress,
-  selectedEntityId,
-  showRoles = true,
-  showMemberCounts = true,
-  showDescriptions = true,
-  emptyMessage = 'No entities found',
-  emptyIcon,
-  loading = false,
-  refreshing = false,
-  onRefresh,
-  ListHeaderComponent,
-  ListFooterComponent,
-  className = '',
+  selectedSlug,
+  onSelect,
+  isLoading = false,
+  emptyMessage = 'No workspaces found',
+  className,
   style,
   testID,
+  onTrack,
+  trackingLabel,
+  componentName = 'EntityList',
 }) => {
-  const renderItem = ({ item }: { item: Entity }) => (
-    <EntityCard
-      entity={item}
-      onPress={onEntityPress}
-      onLongPress={onEntityLongPress}
-      selected={selectedEntityId === item.id}
-      showRole={showRoles}
-      showMemberCount={showMemberCounts}
-      showDescription={showDescriptions}
-      className='mb-3'
-    />
-  );
-
-  const renderEmpty = () => {
-    if (loading) {
-      return (
-        <View className='flex-1 items-center justify-center py-12'>
-          <ActivityIndicator size='large' color={colors.raw.blue[500]} />
-          <Text className='text-muted-foreground mt-4'>Loading...</Text>
-        </View>
-      );
-    }
-
+  if (isLoading) {
     return (
-      <View className='flex-1 items-center justify-center py-12'>
-        {emptyIcon}
-        <Text className='text-muted-foreground text-center mt-2'>
+      <View
+        className={cn('gap-3', className)}
+        style={style}
+        testID={testID}
+        accessible
+        accessibilityRole='progressbar'
+        accessibilityLabel='Loading workspaces'
+      >
+        {[1, 2, 3].map(i => (
+          <View
+            key={i}
+            className='h-24 rounded-lg border border-border bg-muted'
+          />
+        ))}
+      </View>
+    );
+  }
+
+  if (entities.length === 0) {
+    return (
+      <View className={cn('py-8', className)} style={style} testID={testID}>
+        <Text className='text-center text-base text-muted-foreground'>
           {emptyMessage}
         </Text>
       </View>
     );
+  }
+
+  const handleSelect = (entity: EntityWithRole) => {
+    onTrack?.({ action: 'select', trackingLabel, componentName });
+    onSelect?.(entity);
   };
 
-  const keyExtractor = (item: Entity) => item.id;
-
   return (
-    <View className={cn('flex-1', className)} style={style} testID={testID}>
-      <FlatList
-        data={entities}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        ListHeaderComponent={ListHeaderComponent}
-        ListFooterComponent={ListFooterComponent}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.raw.blue[500]}
-            />
-          ) : undefined
-        }
-      />
+    <View className={cn('gap-3', className)} style={style} testID={testID}>
+      {entities.map(entity => (
+        <EntityCard
+          key={entity.id}
+          entity={entity}
+          isSelected={entity.entitySlug === selectedSlug}
+          onPress={onSelect ? () => handleSelect(entity) : undefined}
+          onTrack={onTrack}
+          trackingLabel={trackingLabel}
+        />
+      ))}
     </View>
   );
 };

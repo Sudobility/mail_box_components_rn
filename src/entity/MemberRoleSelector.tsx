@@ -1,42 +1,102 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Modal } from 'react-native';
-import { cn } from '../index';
-import type { MemberRoleSelectorProps, EntityRole } from './types';
-import { DEFAULT_ROLE_CONFIGS } from './types';
-import { pressProps } from '../index';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { EntityRole } from '@sudobility/types';
+import { cn, pressProps } from '../index';
+import {
+  BriefcaseIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  ShieldCheckIcon,
+  type IconProps,
+} from './icons';
+
+/** Tracking data for MemberRoleSelector actions */
+export interface MemberRoleSelectorTrackingData {
+  action: 'toggle' | 'select';
+  trackingLabel?: string;
+  componentName?: string;
+}
+
+export interface MemberRoleSelectorProps {
+  /** Current role value */
+  value: EntityRole;
+  /** Change handler */
+  onChange: (role: EntityRole) => void;
+  /** Whether the selector is disabled */
+  disabled?: boolean;
+  /** Additional class names */
+  className?: string;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+  /** Optional tracking callback */
+  onTrack?: (data: MemberRoleSelectorTrackingData) => void;
+  /** Optional tracking label */
+  trackingLabel?: string;
+  /** Optional component name for tracking */
+  componentName?: string;
+}
+
+interface RoleOption {
+  value: EntityRole;
+  label: string;
+  description: string;
+  icon: React.ComponentType<IconProps>;
+  color: string;
+}
+
+const roleOptions: RoleOption[] = [
+  {
+    value: EntityRole.OWNER,
+    label: 'Owner',
+    description: 'Full access to all settings and members',
+    icon: ShieldCheckIcon,
+    color: 'text-accent-foreground',
+  },
+  {
+    value: EntityRole.MANAGER,
+    label: 'Manager',
+    description: 'Can manage projects and API keys',
+    icon: BriefcaseIcon,
+    color: 'text-primary',
+  },
+  {
+    value: EntityRole.MEMBER,
+    label: 'Member',
+    description: 'Read-only access',
+    icon: EyeIcon,
+    color: 'text-muted-foreground',
+  },
+];
 
 /**
- * Get role badge color classes
- */
-const getRoleBadgeClasses = (role: EntityRole): string => {
-  const colorMap: Record<EntityRole, string> = {
-    owner: 'bg-accent  text-accent-foreground ',
-    admin: 'bg-primary/10  text-primary dark:text-primary-foreground',
-    member: 'bg-success/10  text-success',
-    viewer: 'bg-muted text-foreground',
-    guest: 'bg-warning/10  text-warning ',
-  };
-  return colorMap[role] || colorMap.member;
-};
-
-/**
- * MemberRoleSelector - Role selection component
+ * MemberRoleSelector - A compact trigger showing the current role; pressing it
+ * opens the list of roles, each with its icon and what it grants.
+ *
+ * RN counterpart of the web's `MemberRoleSelector` dropdown. The menu is a
+ * modal here: a popover anchored to a list row has no room on a phone.
  */
 export const MemberRoleSelector: React.FC<MemberRoleSelectorProps> = ({
-  selectedRole,
-  onRoleChange,
-  availableRoles = ['admin', 'member', 'viewer', 'guest'],
+  value,
+  onChange,
   disabled = false,
-  showDescriptions = true,
-  className = '',
+  className,
   style,
   testID,
+  onTrack,
+  trackingLabel,
+  componentName = 'MemberRoleSelector',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const selectedRole =
+    roleOptions.find(r => r.value === value) || roleOptions[2];
+  const SelectedIcon = selectedRole.icon;
 
-  const handleOpen = () => {
+  const handleToggle = () => {
     if (!disabled) {
-      setIsOpen(true);
+      onTrack?.({ action: 'toggle', trackingLabel, componentName });
+      setIsOpen(!isOpen);
     }
   };
 
@@ -45,58 +105,31 @@ export const MemberRoleSelector: React.FC<MemberRoleSelectorProps> = ({
   };
 
   const handleSelect = (role: EntityRole) => {
-    onRoleChange(role);
-    handleClose();
+    onTrack?.({ action: 'select', trackingLabel, componentName });
+    onChange(role);
+    setIsOpen(false);
   };
-
-  const selectedConfig = DEFAULT_ROLE_CONFIGS.find(
-    c => c.role === selectedRole
-  );
-  const availableConfigs = DEFAULT_ROLE_CONFIGS.filter(c =>
-    availableRoles.includes(c.role)
-  );
 
   return (
     <View className={className} style={style} testID={testID}>
       {/* Trigger Button */}
       <Pressable
-        {...pressProps(handleOpen, disabled)}
+        {...pressProps(handleToggle, disabled)}
         disabled={disabled}
         className={cn(
-          'flex-row items-center justify-between px-4 py-3 rounded-xl',
-          'bg-card',
-          'border border-border',
-          disabled && 'opacity-50',
-          'active:opacity-80'
+          'flex-row items-center gap-1.5 rounded border border-border bg-background px-2 py-1',
+          disabled ? 'opacity-50' : 'active:bg-muted'
         )}
         accessibilityRole='button'
-        accessibilityLabel={`Selected role: ${selectedConfig?.label || selectedRole}`}
-        accessibilityState={{ disabled }}
+        accessibilityLabel={`Role: ${selectedRole.label}`}
+        accessibilityState={{ disabled, expanded: isOpen }}
       >
-        <View className='flex-row items-center'>
-          <View
-            className={cn(
-              'px-3 py-1 rounded-full mr-2',
-              getRoleBadgeClasses(selectedRole)
-            )}
-          >
-            <Text className='text-sm font-medium'>
-              {selectedConfig?.label || selectedRole}
-            </Text>
-          </View>
-          {showDescriptions && selectedConfig && (
-            <Text
-              className='text-sm text-muted-foreground flex-1'
-              numberOfLines={1}
-            >
-              {selectedConfig.description}
-            </Text>
-          )}
-        </View>
-        <Text className='text-muted-foreground text-lg ml-2'>▼</Text>
+        <SelectedIcon size={14} className={selectedRole.color} />
+        <Text className='text-sm text-foreground'>{selectedRole.label}</Text>
+        <ChevronDownIcon size={14} className='text-muted-foreground' />
       </Pressable>
 
-      {/* Dropdown Modal */}
+      {/* Role menu */}
       <Modal
         visible={isOpen}
         transparent
@@ -105,73 +138,67 @@ export const MemberRoleSelector: React.FC<MemberRoleSelectorProps> = ({
       >
         <Pressable
           {...pressProps(handleClose)}
-          className='flex-1 bg-black/50 justify-center px-4'
+          className='flex-1 justify-center bg-black/50 px-4'
         >
           <Pressable
             /* no-a11y-tap: swallows a press on the panel so it does not reach the scrim behind it. Not a control, and there is no gesture behind an assistive activation to stop. */
             onPress={e => e.stopPropagation()}
-            className='bg-card rounded-2xl overflow-hidden'
+            className='overflow-hidden rounded-lg border border-border bg-card'
           >
             {/* Header */}
-            <View className='px-4 py-3 border-b border-border'>
-              <Text className='text-lg font-semibold text-foreground'>
-                Select Role
+            <View className='border-b border-border px-4 py-3'>
+              <Text
+                className='text-lg font-semibold text-foreground'
+                accessibilityRole='header'
+              >
+                Roles
               </Text>
             </View>
 
             {/* Role Options */}
-            {availableConfigs.map(config => (
-              <Pressable
-                key={config.role}
-                {...pressProps(() => handleSelect(config.role))}
-                className={cn(
-                  'px-4 py-4 border-b border-border',
-                  selectedRole === config.role && 'bg-primary/10',
-                  'active:bg-muted'
-                )}
-                accessibilityRole='button'
-                accessibilityLabel={`${config.label}: ${config.description}`}
-                accessibilityState={{ selected: selectedRole === config.role }}
-              >
-                <View className='flex-row items-center justify-between'>
-                  <View className='flex-1'>
-                    <View className='flex-row items-center'>
-                      <View
-                        className={cn(
-                          'px-3 py-1 rounded-full',
-                          getRoleBadgeClasses(config.role)
-                        )}
-                      >
-                        <Text className='text-sm font-medium'>
-                          {config.label}
-                        </Text>
-                      </View>
-                    </View>
-                    {showDescriptions && (
-                      <Text className='text-sm text-muted-foreground mt-2'>
-                        {config.description}
-                      </Text>
-                    )}
-                  </View>
-                  {selectedRole === config.role && (
-                    <Text className='text-primary dark:text-primary text-lg ml-2'>
-                      ✓
-                    </Text>
+            {roleOptions.map(option => {
+              const OptionIcon = option.icon;
+              const selected = option.value === value;
+              return (
+                <Pressable
+                  key={option.value}
+                  {...pressProps(() => handleSelect(option.value))}
+                  className={cn(
+                    'flex-row items-start gap-2 px-4 py-3 active:bg-muted',
+                    selected && 'bg-muted'
                   )}
-                </View>
-              </Pressable>
-            ))}
+                  accessibilityRole='button'
+                  accessibilityLabel={`${option.label}: ${option.description}`}
+                  accessibilityState={{ selected }}
+                >
+                  <View className='mt-0.5'>
+                    <OptionIcon size={16} className={option.color} />
+                  </View>
+                  <View className='min-w-0 flex-1'>
+                    <View className='flex-row items-center gap-2'>
+                      <Text className='text-sm font-medium text-foreground'>
+                        {option.label}
+                      </Text>
+                      {selected ? (
+                        <CheckIcon size={14} className='text-primary' />
+                      ) : null}
+                    </View>
+                    <Text className='text-xs text-muted-foreground'>
+                      {option.description}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
 
             {/* Cancel Button */}
             <Pressable
               {...pressProps(handleClose)}
               accessibilityRole='button'
               accessibilityLabel='Cancel'
-              className='px-4 py-3 items-center active:bg-muted'
+              className='items-center border-t border-border px-4 py-3 active:bg-muted'
             >
-              <Text className='text-primary dark:text-primary font-medium'>
-                Cancel
-              </Text>
+              <Text className='text-base font-medium text-primary'>Cancel</Text>
             </Pressable>
           </Pressable>
         </Pressable>

@@ -192,3 +192,34 @@ describe('FormModal frame', () => {
     expect(getByText('Settings')).toBeTruthy();
   });
 });
+
+describe('FormModal while saving', () => {
+  const requestClose = (saving: boolean) => {
+    const onClose = jest.fn();
+    const view = render(
+      <FormModal
+        visible
+        title='Edit item'
+        onClose={onClose}
+        onSave={() => {}}
+        saving={saving}
+      >
+        <Text>body</Text>
+      </FormModal>
+    );
+    // What Android's hardware Back, or a swipe-down, asks the host for.
+    const host = view.UNSAFE_root.findAll(
+      node => 'onRequestClose' in node.props
+    )[0];
+    host.props.onRequestClose?.();
+    return onClose;
+  };
+
+  it('closes on a system dismiss request when idle', () => {
+    expect(requestClose(false)).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a system dismiss request while a save is in flight', () => {
+    expect(requestClose(true)).not.toHaveBeenCalled();
+  });
+});
